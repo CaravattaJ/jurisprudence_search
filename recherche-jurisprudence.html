@@ -173,6 +173,18 @@
   .conn .state { font-size: 12.5px; margin: 0; }
   .conn .state.ok { color: var(--accent); font-weight: 600; }
   .conn pre { margin: 0; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow: auto; color: var(--ink-2); }
+  .moyen { margin: 10px 0 0; padding: 9px 12px; border: 1px solid var(--line); border-left: 4px solid var(--ink-3); border-radius: 0 var(--radius) var(--radius) 0; background: var(--surface-2); overflow-wrap: anywhere; }
+  .moyen[data-s=ecarte] { border-left-color: var(--accent); }
+  .moyen[data-s=accueilli] { border-left-color: #b4491f; }
+  .moyen .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--ink-3); margin-bottom: 5px; }
+  .moyen .verdict { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 1px 8px; border-radius: 3px; border: 1px solid currentColor; color: var(--ink-2); background: var(--surface); }
+  .moyen[data-s=ecarte] .verdict { color: var(--accent); }
+  .moyen[data-s=accueilli] .verdict { color: #b4491f; }
+  @media (prefers-color-scheme: dark) { .moyen[data-s=accueilli] { border-left-color: #f0a37e; } .moyen[data-s=accueilli] .verdict { color: #f0a37e; } }
+  .moyen .pt { font-family: var(--serif); font-size: 14.5px; line-height: 1.55; color: var(--ink); margin: 0; }
+  .moyen .more { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+  .field.lead { padding: 12px; margin: -6px -6px 16px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); }
+  .field.lead select { background: var(--surface); }
   .disp { margin: 9px 0 0; padding: 7px 10px; border-left: 3px solid var(--accent); background: var(--surface-2); font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
   .disp .tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-bottom: 3px; }
   .disp .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
@@ -199,6 +211,17 @@
 
 <main>
   <section class="panel form" aria-label="Critères de recherche">
+    <div class="field lead">
+      <label class="lbl" for="moyen">Moyen à contrer</label>
+      <select id="moyen"><option value="">Aucun : recherche libre par mots-clés</option></select>
+      <label class="lbl" for="mesure" style="margin-top:10px">Mesure contestée</label>
+      <select id="mesure">
+        <option value="all">Sport et accueils de mineurs</option>
+        <option value="sport">Sport (L. 212-13 du code du sport)</option>
+        <option value="acm">Accueils de mineurs (L. 227-10 et L. 227-11 CASF)</option>
+      </select>
+      <p class="hint" id="moyenHint">Choisissez l'argument du requérant : la page cherche les décisions rendues sur ces mesures et montre comment le juge y a répondu.</p>
+    </div>
     <div class="field">
       <label class="lbl" for="kw">Mots-clés</label>
       <input type="text" id="kw" autocomplete="off" spellcheck="false" placeholder='ex. "accueil collectif de mineurs" suspension'>
@@ -277,6 +300,7 @@
         <option value="20">20 (rapide)</option>
         <option value="50" selected>50</option>
         <option value="100">100 (plus lent)</option>
+        <option value="200">200 (très lent, pour un moyen)</option>
       </select>
     </div>
 
@@ -290,6 +314,8 @@
     <div class="results-head">
       <h2 id="rtitle">Résultats</h2>
       <div class="ctl">
+        <label for="moyenF" id="moyenFL" hidden>Réponse au moyen</label>
+        <select id="moyenF" hidden><option value="">toutes</option></select>
         <label for="issue">Issue</label>
         <select id="issue"><option value="">toutes</option></select>
         <label for="sort">Classer par</label>
@@ -318,7 +344,7 @@
   <p id="hostNote" hidden>Version hébergée : les recherches Légifrance passent par le relais du service, qui obtient l'accès à votre place. Il ne conserve ni les termes recherchés ni les résultats. Les recherches open data partent directement de votre poste.</p>
   <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis aux moteurs de recherche (open data et, si vous l'avez connecté, Légifrance) ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
   <p>Couverture de l'open data : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Pour les décisions plus anciennes, connectez Légifrance, qui couvre surtout le Conseil d'État et les cours administratives d'appel.</p>
-  <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Le « dispositif » affiché sous chaque décision est lu automatiquement à la fin du texte : l'étiquette (rejet, annulation…) est indicative et ne dit pas à elle seule qui obtient gain de cause, notamment en appel. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
+  <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. La « réponse au moyen » est repérée automatiquement dans les motifs, d'après les formules habituelles du juge (« doit être écarté », « est fondé à soutenir »…) : relisez toujours le passage dans la décision avant de le citer, et vérifiez qu'il est transposable à votre dossier. Le « dispositif » affiché sous chaque décision est lu automatiquement à la fin du texte : l'étiquette (rejet, annulation…) est indicative et ne dit pas à elle seule qui obtient gain de cause, notamment en appel. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
 </footer>
 
 <script>
@@ -395,6 +421,7 @@
   var current = { id: 0, hits: [], terms: [], total: 0, analysed: false };
   var controller = null;
   var artFilter = '';           // article de code servant de filtre
+  var moyenRun = null;          // moyen de la recherche en cours (null en recherche libre)
   var showCJA = false;          // inclure le code de justice administrative dans le panneau
 
   // --- Normalisation (longueur conservée, pour pouvoir surligner) ----------
@@ -711,8 +738,15 @@
       }
     };
   }
-  async function lfSearch(terms, d1, d2, n, sel, signal) {
+  function lfAnyGroup(list) {
+    return {
+      operateur: 'ET',
+      criteres: list.map(function (v) { return { typeRecherche: /\s/.test(v) ? 'EXACTE' : 'UN_DES_MOTS', valeur: v, operateur: 'OU' }; })
+    };
+  }
+  async function lfSearch(terms, d1, d2, n, sel, signal, groups) {
     var criteres = lfCriteria(terms);
+    (groups || []).forEach(function (g) { criteres.push(lfAnyGroup(g)); });
     var dates = (d1 || d2) ? [d1 || '1900-01-01', d2 || new Date().toISOString().slice(0, 10)] : null;
     var res, localDates = false;
     try {
@@ -828,6 +862,135 @@
     ranges.sort(function (a, b) { return a[0] - b[0]; });
     return { score: score, found: found, scored: scored, ranges: ranges, roles: terms.map(function (t) { return t.role; }) };
   }
+  // --- Recherche par moyen -------------------------------------------------
+  // Mesures de police du service : interdiction d'exercer et suspension en urgence.
+  var MESURES = {
+    all: { any: ['212-13', '227-10', '227-11'] },
+    sport: { any: ['212-13'] },
+    acm: { any: ['227-10', '227-11'] }
+  };
+  function mesureOk(text, key) {
+    var n = norm(text);
+    var sport = /212-13/.test(n) && /code (du|des) sports?/.test(n);
+    var acm = /227-1[01]/.test(n) && /action sociale et des familles/.test(n);
+    return key === 'sport' ? sport : (key === 'acm' ? acm : (sport || acm));
+  }
+  // any : termes envoyés au moteur (au moins un doit figurer) ; hl : termes surlignés ; re : repère local du moyen dans un point de la décision.
+  var MOYENS = [
+    { id: 'incompetence', label: 'Incompétence du signataire',
+      any: ['incompétence', 'délégation de signature', 'signataire'], hl: ['incompétence', 'délégation de signature', 'signataire'],
+      re: /incompeten|delegation de signature|signataire de (l'arrete|la decision|l'acte|la mesure)|delegation (a l'effet|pour signer)|competen[a-z]* (du signataire|de l'auteure?)|auteure? de l'acte/ },
+    { id: 'motivation', label: 'Défaut ou insuffisance de motivation',
+      any: ['motivation', 'motivé', 'motivée'], hl: ['motivation', 'motivée'],
+      re: /motivation|insuffisamment motive|pas motive|est motive|suffisamment motive|l\.? ?211-2|l\.? ?211-5|considerations de droit et de fait/ },
+    { id: 'contradictoire', label: 'Absence de procédure contradictoire',
+      any: ['contradictoire', '121-1', '121-2', 'droits de la défense'], hl: ['contradictoire', 'observations', 'droits de la défense'],
+      re: /contradictoire|l\.? ?121-1|l\.? ?121-2|l\.? ?122-1|droits de la defense|presenter (ses|des) observations|mis a meme de/,
+      not: /(sans |d'une )?instruction contradictoire|debat contradictoire|audience publique|l\.? ?522-[13]/ },
+    { id: 'urgence', label: 'Urgence non caractérisée (pour suspendre sans attendre)',
+      any: ['urgence'], hl: ['urgence'],
+      re: /situation d'urgence|en cas d'urgence|caractere d'urgence|l'urgence (a|de|qu'il y avait|justifi)|urgence (justifiant|caracterisee|n'est pas|n'etait pas|etait|a suspendre)|suspen[a-z]* en urgence|mesure d'urgence/,
+      not: /l\.? ?521-1|condition d'urgence|suffisamment grave et immediate|juge des referes|l'urgence justifie que soit prononcee|urgence (a|de) suspendre/, strict: true },
+    { id: 'faits', label: 'Inexactitude matérielle des faits',
+      any: ['matérialité', 'erreur de fait', 'inexactitude matérielle', 'matériellement'], hl: ['matérialité', 'erreur de fait', 'matériellement'],
+      re: /materialite|erreur de fait|inexactitude materielle|materiellement (etabli|inexact)|faits (reproches )?(sont|ne sont pas|seraient) (suffisamment )?etablis|exactitude materielle/ },
+    { id: 'appreciation', label: 'Erreur d\'appréciation, mesure disproportionnée',
+      any: ['erreur d\'appréciation', 'disproportionnée', 'disproportion', 'proportionnée'], hl: ['erreur d\'appréciation', 'disproportionnée', 'proportionnée'],
+      re: /erreur (manifeste )?d'appreciation|disproportion|proportionne|inexacte application|necessaire, adaptee|adaptee et proportion/ },
+    { id: 'duree', label: 'Durée de la mesure',
+      any: ['durée'], hl: ['durée', 'six mois'],
+      re: /duree[^.]{0,70}(excessive|disproportionn|maximale|ne peut exceder|illimitee|superieure a six mois|erreur)|(excessive|disproportionn)[^.]{0,70}duree|interdiction (definitive|permanente)|caractere (definitif|permanent)|sans limitation de duree|au-dela de (la duree de )?six mois|limitee? dans le temps|duree (de la mesure|de l'interdiction|de la suspension)/ },
+    { id: 'penal', label: 'Procédure pénale, classement sans suite, présomption d\'innocence',
+      any: ['classement sans suite', 'présomption d\'innocence', 'procédure pénale', 'relaxe', 'poursuites pénales'], hl: ['classement sans suite', 'présomption d\'innocence', 'procédure pénale', 'relaxe'],
+      re: /classement sans suite|classee? sans suite|presomption d'innocence|procedure penale|poursuites penales|relaxe|juge penal|autorite de (la )?chose jugee|condamnation penale|enquete penale|independan[a-z]* des poursuites/ },
+    { id: 'refere', label: 'En référé : urgence à suspendre, doute sérieux',
+      any: ['521-1', 'doute sérieux'], hl: ['doute sérieux', 'condition d\'urgence'],
+      re: /l\.? ?521-1|condition d'urgence|doute serieux|urgence s'apprecie|atteinte suffisamment grave et immediate/ }
+  ];
+  var VERDICT = { ecarte: 'Moyen écarté', accueilli: 'Moyen accueilli', mixte: 'Réponses divergentes', indetermine: 'Réponse à lire', absent: 'Moyen non examiné' };
+  var ECARTE_RE = /(doit|doivent|peut|peuvent|sera|seront)[^.;]{0,70}etre ecartee?s?|(est|sont) (donc |ainsi |des lors )?ecartee?s?\b|manifestement infondee?s?|(est|sont) infondee?s?\b|n'est pas fondee?\b|ne sont pas fondee?s\b|(ne peut|ne peuvent|ne saurait|ne sauraient|ne pourra|ne pourront)[^.;]{0,70}(etre ecartee?s?|etre accueillie?s?|qu'etre ecartee?s?)|\becartee?s? comme|manquent? en fait|n'est pas fondee? a (soutenir|se prevaloir|demander|invoquer)|ne sont pas fondee?s a|n'est pas entachee?|ne sont pas entachee?s|n'a pas (meconnu|entache|commis|fait une|porte)|n'ont pas (meconnu|commis)|est inoperant|sont inoperants|ne peut (etre )?utilement|ne peuvent (etre )?utilement|n'est pas de nature a|ne sont pas de nature a|n'est, en l'etat de l'instruction|n'apparait pas[^.;]{0,80}doute serieux|aucun (des )?moyens?[^.;]{0,120}n'est|ne peut etre regardee? comme (remplie|satisfaite)|n'est pas (remplie|satisfaite)|n'etait pas tenue?|n'etait pas (necessaire|requis)|a pu legalement|pouvait legalement|pouvait,? sans|a pu,? sans|sans (commettre|entacher|meconnaitre)|est suffisamment motivee?|comporte[^.;]{0,60}considerations de droit et de fait|doit etre regardee? comme (suffisamment|regulierement)|disposait[^.;]{0,80}delegation|a recu delegation|beneficiait[^.;]{0,60}delegation|etait (ainsi )?competente?|se trouvait dans une situation d'urgence|l'urgence[^.;]{0,60}(etait|est) (ainsi )?(caracterisee|etablie|justifiee)|sont (suffisamment )?etablis|est (ainsi )?etablie/g;
+  var ACCUEILLI_RE = /est fondee? a (soutenir|demander)|sont fondee?s a (soutenir|demander)|doit etre accueilli|doivent etre accueillis|entachee? d'(une |un )?(illegalite|incompetence|erreur|vice|insuffisance|defaut|irregularite)|a (ainsi )?meconnu|ont (ainsi )?meconnu|procedure irreguliere|(propre|de nature) a (creer|faire naitre)[^.;]{0,80}doute serieux|doit etre regardee? comme (remplie|satisfaite)|a (ainsi )?entache|a commis une erreur|a fait une inexacte application|doit[^.;]{0,30}etre annulee?|en meconnaissance d|a ete privee? d'une garantie|ne pouvait (legalement|pas)|est insuffisamment motivee?|ne comporte pas|n'a pas ete mise? a meme/;
+  // Formules dont le sens dépend de celui qui échoue à prouver : l'administration (moyen accueilli) ou le requérant (moyen écarté).
+  var BURDEN_RE = /n'etablit pas|n'etablissent pas|ne justifie pas|ne justifient pas|ne demontre pas|ne demontrent pas|n'apporte (pas|aucun)|n'apportent (pas|aucun)|ne peut etre regardee? comme (etablissant|justifiant)|ne produit (pas|aucun)/;
+  var ADMIN_RE = /(prefet|prefete|ministre|administration|autorite (administrative|prefectorale|academique)|recteur|rectrice|\betat\b|directeur|directrice)[^.]{0,90}$/;
+  var NOTPROVEN_RE = /n'est pas (etablie?|justifiee?|caracterisee?|demontree?)|ne sont pas (etablie?s|caracterisee?s|demontree?s)|n'etait pas (etablie?|caracterisee?)/;
+  var REFERE_URG_RE = /condition d'urgence|suffisamment grave et immediate|urgence[^.]{0,60}(l\.? ?521-1|au sens d)|urgence (a|de) suspen/;
+  var CLAIMLIST_RE = /(soutient|soutiennent|fait valoir|font valoir)[^.]{0,120}:\s*(-|1°)/;
+  var CLAIM_RE = /\bsoutient|\bsoutiennent|fait valoir|font valoir|\ballegue|se prevaut|\bserait\b|\bseraient\b|aurait (meconnu|commis|ete)|invoque|a supposer/;
+  // Découpe les motifs en points numérotés (ou en « Considérant » pour les décisions anciennes).
+  function decisionPoints(text) {
+    var start = 0, m;
+    var mk = /consid[ée]rant ce qui suit\s*:?/i.exec(text);
+    if (mk) start = mk.index + mk[0].length;
+    var end = text.length, re = /(?:D\s?[ÉE]\s?C\s?I\s?D\s?E|O\s?R\s?D\s?O\s?N\s?N\s?E)\s*:?/g;
+    while ((m = re.exec(text))) { if (m.index > start) end = m.index; }
+    var body = text.slice(start, end), lines = body.split('\n'), pts = [], last = 0, cur = null;
+    lines.forEach(function (line) {
+      var k = /^\s*(\d{1,3})\s?\.\s+\S/.exec(line);
+      var num = k ? parseInt(k[1], 10) : 0;
+      if (k && num > last && num <= last + 2) { cur = { n: num, text: line.trim() }; pts.push(cur); last = num; }
+      else if (cur) cur.text += '\n' + line.trim();
+    });
+    if (pts.length >= 2) return pts;
+    // L'open data supprime souvent la numérotation des points : chaque paragraphe des motifs compte alors pour un point.
+    pts = [];
+    lines.forEach(function (line) {
+      var tx = line.trim();
+      if (tx.length < 60 || (tx.length < 160 && /:$/.test(tx))) return;      // intertitres (« Sur la légalité externe : »)
+      pts.push({ n: 0, text: tx });
+    });
+    return pts;
+  }
+  function pointVerdict(n) {
+    // Un point qui énumère les griefs du requérant (« soutient que : - … ; - … ») ne contient pas la réponse du juge.
+    if (CLAIMLIST_RE.test(n)) return '';
+    var parts = n.split(/(?<=\.)\s+/);
+    for (var i = parts.length - 1; i >= 0; i--) {
+      var sent = parts[i];
+      // En référé, tout se joue sur la phrase du « doute sérieux » : négative, le moyen est écarté.
+      if (/doit etre regardee? comme (remplie|satisfaite) lorsque|est (remplie|satisfaite) lorsque/.test(sent)) continue;
+      if (/sans qu'il soit besoin/.test(sent) && /doute serieux|autres moyens/.test(sent) && !/fonde a|doit etre annule|doivent etre annule/.test(sent)) continue;
+      var bm = BURDEN_RE.exec(sent);
+      if (bm) return ADMIN_RE.test(sent.slice(0, bm.index)) ? 'accueilli' : 'ecarte';
+      if (NOTPROVEN_RE.test(sent) && !CLAIM_RE.test(sent)) return REFERE_URG_RE.test(sent) ? 'ecarte' : 'accueilli';
+      if (/doute serieux/.test(sent) && !CLAIM_RE.test(sent)) {
+        if (/aucun|n'est|ne sont|n'apparai|ne parai|ne saurai|ne peut|ne peuvent|n'ont|n'a pas|pas de nature/.test(sent)) return 'ecarte';
+        if (/(de nature|propres?|susceptibles?) a (creer|faire naitre)/.test(sent)) return 'accueilli';
+      }
+      ECARTE_RE.lastIndex = 0;
+      if (ECARTE_RE.test(sent)) return 'ecarte';
+      if (!CLAIM_RE.test(sent) && ACCUEILLI_RE.test(sent)) return 'accueilli';
+    }
+    return '';
+  }
+  function moyenAnswer(text, moyen) {
+    var pts = decisionPoints(text), cands = [];
+    pts.forEach(function (p) {
+      var n = norm(p.text);
+      if (!moyen.re.test(n)) return;
+      if (moyen.not && moyen.not.test(n) && (moyen.strict || !moyen.re.test(n.replace(new RegExp(moyen.not.source, 'g'), ' ')))) return;
+      // Simple rappel d'un texte (« Aux termes de… », « En vertu de… ») : ce n'est pas la réponse du juge.
+      var quote = /^\s*(\d{1,3}\s?\.\s+)?((d'une part|d'autre part|en (premier|deuxieme|second|troisieme|quatrieme|cinquieme|dernier) lieu|par ailleurs|en outre|enfin),? )?(aux termes\b|en vertu d|il resulte de ces dispositions|il resulte des dispositions|la condition d'urgence a laquelle est subordonne|l'urgence justifie que soit prononcee|il appartient au juge des referes|selon l'article|l'article [lrd]\.? ?[0-9-]+ d[ue] (meme )?code[^.]{0,80}(dispose|prevoit))/.test(n)
+        && !/(en l'espece|il ressort des pieces|il resulte de l'instruction|par suite)/.test(n.slice(Math.floor(n.length / 2)));
+      if (CLAIMLIST_RE.test(n)) quote = true;
+      cands.push({ n: p.n, text: p.text, verdict: quote ? '' : pointVerdict(n), quote: quote });
+    });
+    var own = cands.filter(function (c) { return !c.quote; });
+    if (!own.length) return { status: 'absent', points: [] };
+    var decided = own.filter(function (c) { return c.verdict; });
+    var status = 'indetermine', main;
+    if (decided.length) {
+      var e = decided.some(function (c) { return c.verdict === 'ecarte'; }), a = decided.some(function (c) { return c.verdict === 'accueilli'; });
+      status = e && a ? 'mixte' : (a ? 'accueilli' : 'ecarte');
+      main = decided[decided.length - 1];
+      // Le juge conclut souvent par un point de synthèse (« le moyen tiré de… doit être écarté ») : il l'emporte.
+      if (status === 'mixte' && main.verdict === 'ecarte' && /\bmoyens?\b/.test(norm(main.text))) status = 'ecarte';
+    } else {
+      main = own[own.length - 1];
+    }
+    return { status: status, main: main, points: cands };
+  }
+
   // --- Sens de la décision : lecture du dispositif (indicatif) ---------------
   var ISSUES = [
     ['Désistement', /desistement/],
@@ -1085,6 +1248,16 @@
     box.appendChild(opt);
     return box;
   }
+  function fillMoyenF() {
+    var sel = $('moyenF'), on = !!moyenRun;
+    sel.hidden = !on; $('moyenFL').hidden = !on;
+    var counts = {};
+    current.hits.forEach(function (h) { if (h._m) counts[h._m.status] = (counts[h._m.status] || 0) + 1; });
+    sel.textContent = '';
+    var add = function (v, label) { var o = document.createElement('option'); o.value = v; o.textContent = label; sel.appendChild(o); };
+    add('', 'toutes');
+    ['ecarte', 'accueilli', 'mixte', 'indetermine', 'absent'].forEach(function (k) { if (counts[k]) add(k, VERDICT[k].toLowerCase() + ' (' + counts[k] + ')'); });
+  }
   function fillIssues() {
     var sel = $('issue'), counts = {}, none = 0;
     current.hits.forEach(function (h) {
@@ -1111,10 +1284,17 @@
     if (current.analysed) out.appendChild(articlesPanel());
     if (issue) hits = hits.filter(function (h) { return issue === '?' ? !(h._d && h._d.tags.length) : (h._d && h._d.tags.indexOf(issue) >= 0); });
     if (artFilter) hits = hits.filter(function (h) { return h._c && h._c[artFilter]; });
+    var mf = moyenRun ? $('moyenF').value : '';
+    if (mf) hits = hits.filter(function (h) { return h._m && h._m.status === mf; });
     if (!hits.length) { out.appendChild(el('div', 'empty', 'Aucune décision analysée ne correspond à ces filtres.')); return; }
     var mode = $('sort').value;
     var byDate = function (a, b) { return String(b.date).localeCompare(String(a.date)); };
-    if (mode === 'rel' && current.analysed) {
+    if (mode === 'rel' && current.analysed && moyenRun) {
+      // Recherche par moyen : d'abord les décisions qui y répondent, puis le Conseil d'État, les cours, les tribunaux.
+      var rk = { ecarte: 0, accueilli: 0, mixte: 1, indetermine: 2, absent: 3 }, lv = { CE: 0, CAA: 1, TA: 2 };
+      var key = function (h) { return (h._m ? rk[h._m.status] : 4) * 10 + (lv[h.level] != null ? lv[h.level] : 3); };
+      hits.sort(function (a, b) { return (key(a) - key(b)) || byDate(a, b); });
+    } else if (mode === 'rel' && current.analysed) {
       hits.sort(function (a, b) { return ((b._a ? b._a.score : -1) - (a._a ? a._a.score : -1)) || byDate(a, b); });
     } else if (mode === 'date') {
       hits.sort(byDate);
@@ -1165,8 +1345,37 @@
         li.appendChild(dv);
       }
 
+      var hasPoint = moyenRun && h._m && h._m.main;
+      if (moyenRun && h._m) {
+        var mv = el('div', 'moyen');
+        mv.dataset.s = h._m.status;
+        var hd = el('div', 'head');
+        hd.appendChild(el('span', 'verdict', VERDICT[h._m.status]));
+        hd.appendChild(el('span', null, moyenRun.moyen.label + (hasPoint && h._m.main.n ? ' · point ' + h._m.main.n : '')));
+        mv.appendChild(hd);
+        if (hasPoint) {
+          var full = h._m.main.text.replace(/\s*\n\s*/g, ' ');
+          // Point long : on montre le début et surtout la fin, où le juge conclut.
+          var shown = full.length > 950 ? full.slice(0, 230).replace(/\s+\S*$/, '') + ' […] ' + full.slice(-680).replace(/^\S*\s+/, '') : full;
+          mv.appendChild(el('p', 'pt', shown));
+          var mo = el('div', 'more');
+          var others = h._m.points.filter(function (c) { return c !== h._m.main && c.n; }).map(function (c) { return c.n; });
+          if (others.length) mo.appendChild(el('span', null, 'Autres points sur ce moyen : ' + others.join(', ')));
+          var cpp = el('button', 'link', 'Copier le passage et la référence');
+          cpp.type = 'button';
+          cpp.addEventListener('click', function () {
+            copyText('« ' + full + ' » (' + h.ref + (h._m.main.n ? ', point ' + h._m.main.n : '') + ')', cpp);
+          });
+          mo.appendChild(cpp);
+          mv.appendChild(mo);
+        } else {
+          mv.appendChild(el('div', 'more', 'Le juge ne se prononce pas sur ce moyen dans les motifs repérés.'));
+        }
+        li.appendChild(mv);
+      }
+
       var txt = textCache.get(h.id);
-      if (h._a && txt) {
+      if (h._a && txt && !hasPoint) {
         excerptWindows(txt, h._a).forEach(function (w) {
           var p = el('p', 'ex');
           if (w[0] > 0) p.appendChild(document.createTextNode('… '));
@@ -1236,7 +1445,17 @@
     var terms = collectTerms();
     var q = queryString(terms);
     setMsg('', '');
-    if (!terms.some(function (t) { return t.role === 'must'; })) {
+    var moyen = null, groups = null, mesure = $('mesure').value;
+    MOYENS.forEach(function (m) { if (m.id === $('moyen').value) moyen = m; });
+    if (moyen) {
+      groups = [MESURES[mesure].any, moyen.any];
+      // Le moteur open data refuse une requête qui se termine par une parenthèse : on finit par un mot présent partout.
+      q = groups.map(function (g) { return '+(' + g.map(function (v) { return '"' + v + '"'; }).join(' ') + ')'; }).join(' ') + (q ? ' ' + q : '') + ' +article';
+      var known = {};
+      terms.forEach(function (t) { known[norm(t.text)] = 1; });
+      moyen.hl.forEach(function (w) { if (!known[norm(w)]) terms.push({ text: w, role: 'bonus', re: termRegex(w) }); });
+    }
+    if (!moyen && !terms.some(function (t) { return t.role === 'must'; })) {
       setMsg('warn', 'Indiquez au moins un terme obligatoire : un mot-clé, ou un terme extrait du texte libre placé en « obligatoire ».');
       return;
     }
@@ -1254,8 +1473,8 @@
     var signal = controller.signal;
     var myId = ++current.id;
     current.hits = []; current.terms = terms; current.total = 0; current.analysed = false;
-    artFilter = '';
-    fillIssues();
+    artFilter = ''; moyenRun = moyen ? { moyen: moyen, mesure: mesure } : null;
+    fillIssues(); fillMoyenF();
     $('out').textContent = '';
     $('rtitle').textContent = 'Résultats';
     setStatus('Interrogation ' + (useOD && useLF ? 'des deux bases…' : 'de la base…'));
@@ -1264,7 +1483,7 @@
     try {
       var settled = await Promise.allSettled([
         useOD ? odSearch(q, courts, d1, d2, n, signal) : Promise.resolve(null),
-        useLF ? lfSearch(terms, d1, d2, n, sel, signal) : Promise.resolve(null)
+        useLF ? lfSearch(terms, d1, d2, n, sel, signal, groups) : Promise.resolve(null)
       ]);
       if (myId !== current.id || signal.aborted) return;
       var od = settled[0].status === 'fulfilled' ? settled[0].value : null;
@@ -1313,6 +1532,11 @@
             h._a = analyse(t, terms);
             h._d = dispositif(t);
             h._c = citedArticles(t);
+            if (moyen) {
+              h._m = moyenAnswer(t, moyen); h._off = !mesureOk(t, mesure);
+              // Garde-fou : un moyen ne peut pas avoir été accueilli si la requête est purement rejetée.
+              if (h._m.status === 'accueilli' && h._d && h._d.tags.length === 1 && (h._d.tags[0] === 'Rejet' || h._d.tags[0] === 'Désistement')) h._m.status = 'indetermine';
+            }
           } catch (e) {
             if (signal.aborted) return;
             h._err = true; failed++;
@@ -1323,8 +1547,14 @@
       }
       await Promise.all([worker(), worker(), worker()]);
       if (myId !== current.id || signal.aborted) return;
+      var off = 0;
+      if (moyen) {
+        off = hits.filter(function (h) { return h._off; }).length;
+        current.hits = hits = hits.filter(function (h) { return !h._off; });
+      }
       current.analysed = true;
-      fillIssues();
+      fillIssues(); fillMoyenF();
+      if (off) addMsg('info', off + ' décision(s) écartée(s) : elles citent un article portant le même numéro dans un autre code.');
       setStatus((failed ? 'Classement terminé. ' + failed + ' décision(s) non lue(s).' : 'Classement terminé.') + (dup ? ' ' + dup + ' doublon(s) entre les deux sources fusionné(s).' : ''));
       renderResults();
     } catch (e) {
@@ -1344,7 +1574,7 @@
     $('kw').value = ''; $('free').value = ''; $('d1').value = ''; $('d2').value = '';
     $('lvCE').checked = $('lvCAA').checked = $('lvTA').checked = true;
     Array.prototype.forEach.call(document.querySelectorAll('#courts input'), function (i) { i.checked = false; });
-    $('nb').value = '50'; $('sort').value = 'rel'; artFilter = ''; showCJA = false; fillIssues();
+    $('nb').value = '50'; $('sort').value = 'rel'; artFilter = ''; showCJA = false; moyenRun = null; $('moyen').value = ''; $('mesure').value = 'all'; fillIssues(); fillMoyenF();
     renderChips();
     setStatus(''); setMsg('', '');
     $('rtitle').textContent = 'Résultats';
@@ -1393,6 +1623,8 @@
   $('lfTok').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lfConnect(); } });
   $('sort').addEventListener('change', renderResults);
   $('issue').addEventListener('change', renderResults);
+  $('moyenF').addEventListener('change', renderResults);
+  MOYENS.forEach(function (m) { var o = document.createElement('option'); o.value = m.id; o.textContent = m.label; $('moyen').appendChild(o); });
 })();
 </script>
 </body>

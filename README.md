@@ -2,6 +2,20 @@
 
 Prototype d'outil interne (non officiel) pour retrouver rapidement des décisions du Conseil d'État, des cours administratives d'appel et des tribunaux administratifs en lien avec un cas.
 
+## À quoi sert l'outil
+
+Il a été conçu pour la préparation des mémoires en défense d'un service départemental jeunesse et sport, dont les mesures de police (suspension en urgence, interdiction d'exercer) sont contestées devant le juge administratif. L'usage principal est la **recherche par moyen** : retrouver comment les juges ont répondu à un argument précis du requérant.
+
+### Recherche par moyen
+
+1. Choisir le **moyen à contrer** : incompétence du signataire, défaut de motivation, absence de procédure contradictoire, urgence non caractérisée, inexactitude matérielle des faits, erreur d'appréciation ou disproportion, durée de la mesure, procédure pénale et présomption d'innocence, conditions du référé.
+2. Choisir la **mesure contestée** : sport (L. 212-13 du code du sport), accueils de mineurs (L. 227-10 et L. 227-11 du code de l'action sociale et des familles), ou les deux.
+3. Lancer la recherche. Pour chaque décision, la page isole le passage des motifs où le juge traite ce moyen et indique s'il l'a **écarté** ou **accueilli**. Le passage se copie avec sa référence.
+
+Les décisions qui répondent au moyen sont classées en premier, le Conseil d'État et les cours avant les tribunaux. Un filtre permet de ne garder que les moyens écartés (à citer) ou accueillis (à anticiper).
+
+Limites : le repérage repose sur les formules habituelles du juge (« doit être écarté », « est fondé à soutenir »…). Mis au point sur 120 décisions réelles, il reste automatique : « réponse à lire » signale un passage trouvé sans conclusion reconnue, et tout passage doit être relu dans la décision avant d'être cité. L'open data supprimant souvent la numérotation des points, le numéro de point n'est indiqué que lorsqu'il est disponible.
+
 ## Utilisation
 
 Enregistrer `recherche-jurisprudence.html` sur le poste, puis l'ouvrir par double-clic dans le navigateur. Aucune installation, aucun serveur. Une version hébergée est aussi possible (voir plus bas).
