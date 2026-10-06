@@ -56,6 +56,7 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
@@ -222,15 +223,15 @@
         <label><input type="checkbox" id="srcLF" disabled> Légifrance (fonds historique)</label>
       </div>
       <details class="more" id="lfBox">
-        <summary>Connexion à Légifrance (PISTE)</summary>
+        <summary id="lfSum">Connexion à Légifrance (PISTE)</summary>
         <div class="conn">
-          <label>Environnement
+          <label id="lfEnvRow">Environnement
             <select id="lfEnv">
               <option value="prod">Production (données réelles)</option>
               <option value="sandbox">Bac à sable (données de test)</option>
             </select>
           </label>
-          <label>Jeton d'accès (valable environ une heure)
+          <label><span id="lfTokText">Jeton d'accès (valable environ une heure)</span>
             <input type="password" id="lfTok" autocomplete="off" spellcheck="false" style="width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px">
           </label>
           <div class="row">
@@ -243,7 +244,7 @@
             <pre id="lfDiag">Aucun essai pour l'instant.</pre>
             <button type="button" class="link" id="lfCopy" style="font-size:12.5px">Copier le diagnostic</button>
           </details>
-          <p class="hint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part, en double-cliquant sur le fichier « obtenir-jeton-legifrance.cmd » fourni avec la page, puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
+          <p class="hint" id="lfHint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part, en double-cliquant sur le fichier « obtenir-jeton-legifrance.cmd » fourni avec la page, puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
         </div>
       </details>
     </div>
@@ -314,6 +315,7 @@
 </main>
 
 <footer class="foot">
+  <p id="hostNote" hidden>Version hébergée : les recherches Légifrance passent par le relais du service, qui obtient l'accès à votre place. Il ne conserve ni les termes recherchés ni les résultats. Les recherches open data partent directement de votre poste.</p>
   <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis aux moteurs de recherche (open data et, si vous l'avez connecté, Légifrance) ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
   <p>Couverture de l'open data : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Pour les décisions plus anciennes, connectez Légifrance, qui couvre surtout le Conseil d'État et les cours administratives d'appel.</p>
   <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Le « dispositif » affiché sous chaque décision est lu automatiquement à la fin du texte : l'étiquette (rejet, annulation…) est indicative et ne dit pas à elle seule qui obtient gain de cause, notamment en appel. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
@@ -333,7 +335,11 @@
     sandbox: { oauth: 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token', api: 'https://sandbox-api.piste.gouv.fr/dila/legifrance/lf-engine-app' }
   };
   var LF_PAGE = 'https://www.legifrance.gouv.fr/ceta/id/';
-  var lf = { env: 'prod', token: '', ok: false };
+  // Version hébergée (page servie en http/https) : un relais côté serveur détient les identifiants PISTE
+  // et la page ne lui envoie qu'un code d'accès. Version fichier (double-clic) : jeton collé par l'utilisateur.
+  var HOSTED = /^https?:$/.test(location.protocol);
+  var RELAY = '/api/legifrance';
+  var lf = { env: 'prod', token: '', code: '', ok: false };
   var diag = [];
 
   // Juridictions présentes dans la base (relevé du 6 octobre 2026).
@@ -648,23 +654,38 @@
     return lf.token;
   }
   async function lfPost(path, payload, signal) {
-    var token = lfToken(), r;
+    var where = HOSTED ? 'relais' : lf.env, r;
     try {
-      r = await timedFetch(PISTE[lf.env].api + path, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload)
-      }, signal);
+      if (HOSTED) {
+        if (!lf.code) throw lfError('creds', 'Code d\'accès manquant.');
+        r = await timedFetch(RELAY, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Code-Acces': lf.code },
+          body: JSON.stringify({ path: path, body: payload })
+        }, signal);
+      } else {
+        r = await timedFetch(PISTE[lf.env].api + path, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + lfToken(), 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        }, signal);
+      }
     } catch (e) {
+      if (e && e.kind) throw e;
       if (signal && signal.aborted) throw e;
-      log(path + ' [' + lf.env + '] : aucune réponse lisible (' + (e && e.name) + ' : ' + (e && e.message) + ')');
-      throw lfError('network', 'Le navigateur n\'a pas pu lire la réponse de Légifrance.');
+      log(path + ' [' + where + '] : aucune réponse lisible (' + (e && e.name) + ' : ' + (e && e.message) + ')');
+      throw lfError('network', HOSTED ? 'Le relais n\'a pas répondu.' : 'Le navigateur n\'a pas pu lire la réponse de Légifrance.');
     }
     if (!r.ok) {
       var detail = '';
-      try { detail = (await r.text()).slice(0, 200); } catch (e2) { /* rien */ }
-      log(path + ' [' + lf.env + '] : HTTP ' + r.status + (detail ? ' — ' + detail : ''));
-      if (r.status === 401) throw lfError('creds', 'Jeton refusé ou expiré : obtenez-en un nouveau.');
+      try { detail = (await r.text()).slice(0, 300); } catch (e2) { /* rien */ }
+      log(path + ' [' + where + '] : HTTP ' + r.status + (detail ? ' — ' + detail : ''));
+      if (r.status === 401) throw lfError('creds', HOSTED ? 'Code d\'accès refusé.' : 'Jeton refusé ou expiré : obtenez-en un nouveau.');
+      if (HOSTED) {
+        var msg = '';
+        try { msg = JSON.parse(detail).error || ''; } catch (e3) { /* rien */ }
+        throw lfError(r.status === 500 ? 'config' : 'http', msg || ('Le relais a répondu HTTP ' + r.status + '.'));
+      }
       throw lfError(r.status === 403 ? 'forbidden' : 'http', 'Légifrance a répondu HTTP ' + r.status + '.');
     }
     return await r.json();
@@ -741,12 +762,14 @@
   }
 
   async function lfConnect() {
+    var given = $('lfTok').value.trim();
     lf.env = $('lfEnv').value;
-    lf.token = $('lfTok').value.trim().replace(/^Bearer\s+/i, '').replace(/^"|"$/g, '');
+    lf.token = HOSTED ? '' : given.replace(/^Bearer\s+/i, '').replace(/^"|"$/g, '');
+    lf.code = HOSTED ? given : '';
     lf.ok = false;
     var st = $('lfState');
     st.className = 'state';
-    if (!lf.token) { st.textContent = 'Collez d\'abord le jeton d\'accès.'; return; }
+    if (!given) { st.textContent = HOSTED ? 'Saisissez le code d\'accès.' : 'Collez d\'abord le jeton d\'accès.'; return; }
     $('lfConnect').disabled = true;
     st.textContent = 'Vérification en cours…';
     try {
@@ -754,22 +777,28 @@
       log('essai de recherche : ' + (res.totalResultNumber || 0) + ' résultat(s)');
       lf.ok = true;
       st.className = 'state ok';
-      st.textContent = 'Connecté à Légifrance (' + (lf.env === 'prod' ? 'production' : 'bac à sable') + '). Jeton collé à ' +
-        new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ', valable environ une heure.';
+      st.textContent = HOSTED ? 'Connecté à Légifrance.'
+        : 'Connecté à Légifrance (' + (lf.env === 'prod' ? 'production' : 'bac à sable') + '). Jeton collé à ' +
+          new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ', valable environ une heure.';
       $('srcLF').disabled = false; $('srcLF').checked = true;
       $('lfOut').hidden = false;
       $('lfTok').value = '';
     } catch (e) {
-      st.textContent = e.kind === 'creds' ? 'Jeton refusé ou expiré. Vérifiez qu\'il correspond à l\'environnement choisi, ou obtenez-en un nouveau.'
-        : e.kind === 'network' ? 'Légifrance est injoignable depuis cette page : votre réseau bloque peut-être l\'accès. Copiez le diagnostic ci-dessous.'
-        : e.kind === 'forbidden' ? 'Jeton accepté mais accès à Légifrance refusé : vérifiez que l\'API Légifrance est cochée dans cette application PISTE.'
-        : (e.message || 'Échec de la connexion.') + ' Copiez le diagnostic ci-dessous.';
+      st.textContent = HOSTED
+        ? (e.kind === 'creds' ? 'Code d\'accès refusé.'
+          : e.kind === 'network' ? 'Le relais n\'a pas répondu. Réessayez dans un instant.'
+          : (e.message || 'Échec de la connexion.') + ' Copiez le diagnostic ci-dessous.')
+        : (e.kind === 'creds' ? 'Jeton refusé ou expiré. Vérifiez qu\'il correspond à l\'environnement choisi, ou obtenez-en un nouveau.'
+          : e.kind === 'network' ? 'Légifrance est injoignable depuis cette page : votre réseau bloque peut-être l\'accès. Copiez le diagnostic ci-dessous.'
+          : e.kind === 'forbidden' ? 'Jeton accepté mais accès à Légifrance refusé : vérifiez que l\'API Légifrance est cochée dans cette application PISTE.'
+          : (e.message || 'Échec de la connexion.') + ' Copiez le diagnostic ci-dessous.');
+      lf.code = ''; lf.token = '';
       $('srcLF').checked = false; $('srcLF').disabled = true;
     }
     $('lfConnect').disabled = false;
   }
   function lfDisconnect() {
-    lf.token = ''; lf.ok = false;
+    lf.token = ''; lf.code = ''; lf.ok = false;
     $('lfTok').value = '';
     $('srcLF').checked = false; $('srcLF').disabled = true;
     $('lfOut').hidden = true;
@@ -1350,6 +1379,14 @@
   $('go').addEventListener('click', search);
   $('kw').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search(); } });
   $('reset').addEventListener('click', resetAll);
+  if (HOSTED) {
+    $('lfSum').textContent = 'Connexion à Légifrance';
+    $('lfEnvRow').hidden = true;
+    $('lfTokText').textContent = 'Code d\'accès du service';
+    $('lfTok').setAttribute('autocomplete', 'current-password');
+    $('lfHint').textContent = 'Le code d\'accès reste en mémoire le temps de la session, sans être enregistré par la page.';
+    $('hostNote').hidden = false;
+  }
   $('lfConnect').addEventListener('click', lfConnect);
   $('lfOut').addEventListener('click', lfDisconnect);
   $('lfCopy').addEventListener('click', function () { copyText(diag.join('\n') || 'Aucun essai.', $('lfCopy')); });
