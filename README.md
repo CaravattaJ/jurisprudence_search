@@ -8,6 +8,8 @@ Il a été conçu pour la préparation des mémoires en défense d'un service d�
 
 ### Recherche par moyen
 
+La page s'ouvre sur l'onglet « Par moyen ». L'onglet « Recherche libre » donne accès à la recherche par mots-clés et par description du cas. Les réglages secondaires (sources, connexion Légifrance, juridictions, période) sont regroupés sous « Options ».
+
 1. Choisir le **moyen à contrer** : incompétence du signataire, défaut de motivation, absence de procédure contradictoire, urgence non caractérisée, inexactitude matérielle des faits, erreur d'appréciation ou disproportion, durée de la mesure, procédure pénale et présomption d'innocence, conditions du référé.
 2. Choisir la **mesure contestée** : sport (L. 212-13 du code du sport), accueils de mineurs (L. 227-10 et L. 227-11 du code de l'action sociale et des familles), ou les deux.
 3. Lancer la recherche. Pour chaque décision, la page isole le passage des motifs où le juge traite ce moyen et indique s'il l'a **écarté** ou **accueilli**. Le passage se copie avec sa référence.

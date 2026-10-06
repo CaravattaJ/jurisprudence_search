@@ -4,313 +4,306 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Recherche de jurisprudence administrative – prototype</title>
+<title>Recherche de jurisprudence administrative</title>
 <style>
   :root {
-    --bg: #f4f2ec;
-    --surface: #ffffff;
-    --surface-2: #faf8f3;
-    --ink: #1b2330;
-    --ink-2: #4c5766;
-    --ink-3: #6f7a88;
-    --line: #dcd7cb;
-    --accent: #1f3a68;
-    --accent-ink: #ffffff;
-    --accent-soft: #e4ebf6;
-    --must: #1f3a68;
-    --bonus: #6b5a1e;
-    --bonus-soft: #f3ecd2;
-    --off: #8a8f97;
-    --mark: #ffe59a;
-    --mark-ink: #1b2330;
-    --warn-bg: #fdf1dc;
-    --warn-ink: #6a4706;
-    --err-bg: #fbe6e3;
-    --err-ink: #7d1f15;
-    --radius: 6px;
-    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --page: #f3f4f7; --surface: #ffffff; --sunk: #f7f8fa;
+    --ink: #131b2e; --ink-2: #465066; --ink-3: #6b7487; --line: #dce0e8;
+    --accent: #0e6f64; --accent-ink: #ffffff; --accent-soft: #e3f1ee;
+    --alert: #a8391f; --alert-soft: #f8e9e4;
+    --mark: #ffe9a6; --mark-ink: #131b2e;
+    --warn-bg: #fdf3dc; --warn-ink: #6a4a06; --err-bg: #f8e9e4; --err-ink: #7d2413;
+    --r: 10px; --r-s: 6px;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --serif: Cambria, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #12161c;
-      --surface: #1a2029;
-      --surface-2: #202733;
-      --ink: #e8ebf0;
-      --ink-2: #b4bcc8;
-      --ink-3: #8c96a4;
-      --line: #313a48;
-      --accent: #9dbcf0;
-      --accent-ink: #0f1620;
-      --accent-soft: #23314a;
-      --must: #9dbcf0;
-      --bonus: #e0cd86;
-      --bonus-soft: #3a3420;
-      --off: #7c8592;
-      --mark: #7a6312;
-      --mark-ink: #fff8dc;
-      --warn-bg: #3a2f17;
-      --warn-ink: #f2dca6;
-      --err-bg: #40201c;
-      --err-ink: #f6c9c2;
+      --page: #0f1420; --surface: #171d2b; --sunk: #1d2434;
+      --ink: #e9ecf2; --ink-2: #b5bccb; --ink-3: #8891a3; --line: #2c3447;
+      --accent: #58c7b6; --accent-ink: #06221e; --accent-soft: #16332f;
+      --alert: #f09a80; --alert-soft: #3a211b;
+      --mark: #6b5713; --mark-ink: #fff6d6;
+      --warn-bg: #3a2f17; --warn-ink: #f2dca6; --err-bg: #3a211b; --err-ink: #f6c9c2;
     }
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 15px/1.5 var(--sans);
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 var(--sans); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 640px) { .wrap { padding: 0 16px; } }
+
+  /* En-tête */
+  header.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 20px; padding-top: 16px; padding-bottom: 16px; }
+  h1 { font: 650 19px/1.25 var(--sans); letter-spacing: -.01em; margin: 0; display: flex; align-items: center; gap: 10px; }
+  h1::before { content: ""; width: 10px; height: 22px; border-radius: 3px; background: var(--accent); flex: none; }
+  .tagline { margin: 0; font-size: 13px; color: var(--ink-3); }
+
+  /* Bloc de recherche */
+  main { padding: 28px 0 8px; }
+  .deck { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px 24px 20px; }
+  @media (max-width: 640px) { .deck { padding: 16px; } }
+  .seg { display: inline-flex; padding: 3px; background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; gap: 2px; max-width: 100%; flex-wrap: wrap; }
+  .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 16px; font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+  .seg button[aria-selected=true], .seg button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); }
+  .seg.small button { font-weight: 500; font-size: 14px; padding: 5px 13px; }
+  .seg.small button[aria-pressed=true] { background: var(--ink); color: var(--surface); }
+  .q { font: 650 24px/1.25 var(--sans); letter-spacing: -.015em; margin: 20px 0 4px; }
+  .lede { margin: 0 0 16px; color: var(--ink-2); max-width: 68ch; }
+  .choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 860px) { .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .choices { grid-template-columns: minmax(0, 1fr); } .q { font-size: 21px; } }
+  .choice { text-align: left; font: inherit; line-height: 1.35; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); padding: 11px 12px 11px 38px; cursor: pointer; position: relative; min-height: 46px; }
+  .choice::before { content: ""; position: absolute; left: 12px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--ink-3); background: var(--surface); }
+  .choice:hover { border-color: var(--ink-3); }
+  .choice[aria-checked=true] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .choice[aria-checked=true]::before { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 4.5px, var(--surface) 5px); }
+  .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 16px; }
+  .lbl { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 6px; color: var(--ink); }
+  .line > .lbl { margin: 0; }
+  .hint { font-size: 12.5px; color: var(--ink-3); margin: 5px 0 0; }
+  input[type=text], input[type=password], input[type=date], textarea, select {
+    width: 100%; font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--r-s); padding: 9px 11px;
   }
-  header.top {
-    padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
-    background: var(--surface);
-  }
-  header.top .wrap, main { max-width: 1240px; margin: 0 auto; }
-  .eyebrow {
-    font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase;
-    color: var(--ink-3); margin: 0 0 4px;
-  }
-  h1 { font: 600 25px/1.2 var(--serif); margin: 0; letter-spacing: -.005em; }
-  header.top p.sub { margin: 6px 0 0; color: var(--ink-2); max-width: 70ch; }
-  main {
-    display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
-    gap: 24px; padding: 24px; align-items: start;
-  }
-  @media (max-width: 860px) {
-    main { grid-template-columns: minmax(0, 1fr); padding: 16px; }
-    header.top { padding: 18px 16px 14px; }
-  }
-  .panel {
-    background: var(--surface); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 18px;
-  }
-  @media (min-width: 861px) { .panel.form { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; } }
-  .field { margin-bottom: 16px; }
-  .field:last-child { margin-bottom: 0; }
-  label.lbl, .lbl { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 5px; }
-  .hint { font-size: 12.5px; color: var(--ink-3); margin: 4px 0 0; }
-  input[type=text], input[type=date], textarea, select {
-    width: 100%; font: inherit; color: var(--ink); background: var(--surface-2);
-    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px;
-  }
-  textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
-  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 2px;
-  }
-  button {
-    font: inherit; cursor: pointer; border-radius: var(--radius);
-    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
-    padding: 7px 12px;
-  }
+  textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
+  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .searchrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: end; margin-top: 18px; }
+  @media (max-width: 640px) { .searchrow { grid-template-columns: minmax(0, 1fr); } }
+  .searchrow input[type=text] { padding: 11px 13px; font-size: 16px; }
+  button { font: inherit; cursor: pointer; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 13px; }
   button:hover { border-color: var(--ink-3); }
-  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 9px 16px; }
-  button.primary:hover { filter: brightness(1.08); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 650; padding: 11px 22px; font-size: 16px; }
+  button.primary:hover { filter: brightness(1.07); }
+  button.quiet { border-color: transparent; background: none; color: var(--ink-2); padding: 11px 10px; }
+  button.quiet:hover { color: var(--ink); border-color: var(--line); }
   button.link { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
   button[disabled] { opacity: .55; cursor: default; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .row.two > * { flex: 1 1 130px; }
-  .checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
-  .checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
-  details.more { margin-top: 8px; }
-  details.more summary { cursor: pointer; font-size: 13px; color: var(--accent); }
-  .courts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px 10px; margin-top: 8px; max-height: 190px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
-  .courts label { font-size: 13px; display: flex; gap: 6px; align-items: center; }
-  .courts .grp { grid-column: 1 / -1; font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); margin-top: 4px; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
-    border-radius: 999px; padding: 3px 10px 3px 8px; border: 1px solid var(--line);
-    background: var(--surface-2); color: var(--ink);
-  }
-  .chip .st { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
-  .chip[data-state=must] { border-color: var(--must); background: var(--accent-soft); }
-  .chip[data-state=must] .st { color: var(--must); }
-  .chip[data-state=bonus] { border-color: var(--bonus); background: var(--bonus-soft); }
-  .chip[data-state=bonus] .st { color: var(--bonus); }
-  .chip[data-state=off] { color: var(--off); border-style: dashed; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; border-radius: 999px; padding: 4px 11px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  .chip .st { font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
+  .chip[data-state=must] { border-color: var(--accent); background: var(--accent-soft); }
+  .chip[data-state=must] .st { color: var(--accent); }
+  .chip[data-state=bonus] { border-color: var(--ink-3); }
+  .chip[data-state=off] { color: var(--ink-3); border-style: dashed; }
   .chip[data-state=off] .w { text-decoration: line-through; }
   .legend { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
   .legend b { color: var(--ink-2); font-weight: 600; }
 
-  .note { font-size: 12.5px; border-radius: var(--radius); padding: 9px 11px; margin: 0; }
-  .note.warn { background: var(--warn-bg); color: var(--warn-ink); }
-  .note.err { background: var(--err-bg); color: var(--err-ink); }
-  .note.info { background: var(--accent-soft); color: var(--ink); }
-
-  .results-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-  .results-head h2 { font: 600 18px/1.3 var(--serif); margin: 0; }
-  .results-head .ctl { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); }
-  .results-head select { width: auto; padding: 5px 8px; }
-  .status { font-size: 13px; color: var(--ink-2); margin: 0 0 12px; min-height: 1.4em; }
-  progress { width: 160px; height: 8px; vertical-align: middle; accent-color: var(--accent); }
-  .empty { color: var(--ink-2); padding: 34px 20px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); }
-  .empty h3 { font: 600 17px var(--serif); margin: 0 0 6px; color: var(--ink); }
-  .empty ol { text-align: left; display: inline-block; margin: 8px 0 0; padding-left: 20px; }
-
-  ol.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
-  .card .ref { font: 600 16px/1.35 var(--serif); margin: 0; }
-  .card .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
-  .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--accent); color: var(--accent); }
-  .rel { display: inline-flex; gap: 6px; align-items: center; }
-  .dots { display: inline-flex; gap: 2px; }
-  .dots i { width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--accent); display: inline-block; }
-  .dots i.on { background: var(--accent); }
-  .ex { margin: 9px 0 0; font-size: 14px; color: var(--ink-2); font-family: var(--serif); line-height: 1.5; overflow-wrap: anywhere; }
-  .ex + .ex { margin-top: 5px; }
-  mark { background: var(--mark); color: var(--mark-ink); padding: 0 1px; border-radius: 2px; }
-  .terms { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
-  .acts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 13.5px; align-items: center; }
-  .acts a { color: var(--accent); text-underline-offset: 2px; }
-  .full { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; font-family: var(--serif); font-size: 15px; line-height: 1.6; max-height: 70vh; overflow: auto; overflow-wrap: anywhere; }
-  .full p { margin: 0 0 .7em; }
-  footer.foot { max-width: 1240px; margin: 0 auto; padding: 0 24px 32px; font-size: 12.5px; color: var(--ink-3); }
-  @media (max-width: 860px) { footer.foot { padding: 0 16px 24px; } }
-  .conn { margin-top: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); display: grid; gap: 8px; }
-  .conn label { font-size: 12.5px; color: var(--ink-2); display: grid; gap: 3px; }
+  /* Options */
+  details.opts { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  details.opts > summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--ink-2); list-style-position: inside; }
+  .optgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin-top: 14px; }
+  @media (max-width: 760px) { .optgrid { grid-template-columns: minmax(0, 1fr); } }
+  .checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+  input[type=checkbox] { accent-color: var(--accent); }
+  details.more { margin-top: 8px; }
+  details.more summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+  .courts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px 10px; margin-top: 8px; max-height: 190px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-s); background: var(--sunk); }
+  .courts label { font-size: 13px; display: flex; gap: 6px; align-items: center; }
+  .courts .grp { grid-column: 1 / -1; font-size: 12px; font-weight: 600; color: var(--ink-3); margin-top: 4px; }
+  .conn { margin-top: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-s); background: var(--sunk); display: grid; gap: 9px; }
+  .conn label { font-size: 12.5px; color: var(--ink-2); display: grid; gap: 4px; }
   .conn .state { font-size: 12.5px; margin: 0; }
   .conn .state.ok { color: var(--accent); font-weight: 600; }
   .conn pre { margin: 0; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow: auto; color: var(--ink-2); }
-  .moyen { margin: 10px 0 0; padding: 9px 12px; border: 1px solid var(--line); border-left: 4px solid var(--ink-3); border-radius: 0 var(--radius) var(--radius) 0; background: var(--surface-2); overflow-wrap: anywhere; }
-  .moyen[data-s=ecarte] { border-left-color: var(--accent); }
-  .moyen[data-s=accueilli] { border-left-color: #b4491f; }
-  .moyen .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--ink-3); margin-bottom: 5px; }
-  .moyen .verdict { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 1px 8px; border-radius: 3px; border: 1px solid currentColor; color: var(--ink-2); background: var(--surface); }
+
+  /* Résultats */
+  .results { padding: 26px 0 8px; }
+  .results-head { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: end; justify-content: space-between; margin-bottom: 6px; }
+  .results-head h2 { font: 650 20px/1.3 var(--sans); letter-spacing: -.01em; margin: 0; }
+  .ctl { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .ctl select { width: auto; padding: 5px 9px; font-size: 13.5px; }
+  .status { font-size: 13px; color: var(--ink-2); margin: 0 0 12px; min-height: 1.4em; }
+  progress { width: 170px; height: 6px; vertical-align: middle; accent-color: var(--accent); }
+  .note { font-size: 13.5px; border-radius: var(--r-s); padding: 10px 12px; margin: 0; }
+  .note.warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .note.err { background: var(--err-bg); color: var(--err-ink); }
+  .note.info { background: var(--sunk); color: var(--ink-2); border: 1px solid var(--line); }
+  .empty { color: var(--ink-2); padding: 40px 20px; text-align: center; border: 1px dashed var(--line); border-radius: var(--r); }
+  .empty h3 { font: 650 17px var(--sans); margin: 0 0 6px; color: var(--ink); }
+  .empty p { margin: 0 auto; max-width: 52ch; }
+  ol.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px 16px; }
+  @media (max-width: 640px) { .card { padding: 14px 15px; } }
+  /* Ordre de lecture d'une décision : référence, réponse du juge ou extraits, puis les détails. */
+  .card { display: flex; flex-direction: column; }
+  .card > .moyen, .card > .ex { order: 1; }
+  .card > .disp { order: 2; }
+  .card > .cited, .card > .terms { order: 3; }
+  .card > .acts { order: 4; }
+  .card > .full { order: 5; }
+  .card .ref { font: 650 17px/1.35 var(--sans); letter-spacing: -.005em; margin: 0; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+  .badge { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--ink-2); color: var(--ink-2); }
+  .src { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--sunk); border: 1px solid var(--line); color: var(--ink-2); }
+  .rel { display: inline-flex; gap: 6px; align-items: center; }
+  .dots { display: inline-flex; gap: 2px; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-3); display: inline-block; }
+  .dots i.on { background: var(--ink-3); }
+  /* La réponse du juge : seul endroit où la couleur porte le sens. */
+  .moyen { margin: 14px 0 0; padding: 12px 16px 12px 18px; border-left: 4px solid var(--ink-3); background: var(--sunk); border-radius: 0 var(--r-s) var(--r-s) 0; overflow-wrap: anywhere; }
+  .moyen[data-s=ecarte] { border-left-color: var(--accent); background: var(--accent-soft); }
+  .moyen[data-s=accueilli] { border-left-color: var(--alert); background: var(--alert-soft); }
+  .moyen .head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 13px; color: var(--ink-2); margin-bottom: 6px; }
+  .moyen .verdict { font-size: 14px; font-weight: 700; color: var(--ink); }
   .moyen[data-s=ecarte] .verdict { color: var(--accent); }
-  .moyen[data-s=accueilli] .verdict { color: #b4491f; }
-  @media (prefers-color-scheme: dark) { .moyen[data-s=accueilli] { border-left-color: #f0a37e; } .moyen[data-s=accueilli] .verdict { color: #f0a37e; } }
-  .moyen .pt { font-family: var(--serif); font-size: 14.5px; line-height: 1.55; color: var(--ink); margin: 0; }
-  .moyen .more { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-  .field.lead { padding: 12px; margin: -6px -6px 16px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); }
-  .field.lead select { background: var(--surface); }
-  .disp { margin: 9px 0 0; padding: 7px 10px; border-left: 3px solid var(--accent); background: var(--surface-2); font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
-  .disp .tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-bottom: 3px; }
-  .disp .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
-  .tag { font-size: 11.5px; font-weight: 600; padding: 0 7px; border-radius: 3px; border: 1px solid var(--ink-3); color: var(--ink); background: var(--surface); }
-  .arts { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
-  .arts h3 { font: 600 14px var(--sans); margin: 0 0 2px; }
-  .arts .chips { margin-top: 8px; }
+  .moyen[data-s=accueilli] .verdict { color: var(--alert); }
+  .moyen .pt { font-family: var(--serif); font-size: 16px; line-height: 1.6; color: var(--ink); margin: 0; max-width: 78ch; }
+  .moyen .more { font-size: 13px; color: var(--ink-2); margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; }
+  .ex { margin: 12px 0 0; font: 15.5px/1.6 var(--serif); color: var(--ink-2); overflow-wrap: anywhere; max-width: 82ch; }
+  .ex + .ex { margin-top: 6px; }
+  mark { background: var(--mark); color: var(--mark-ink); padding: 0 1px; border-radius: 2px; }
+  .disp { margin: 12px 0 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .disp .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 3px; }
+  .disp .lab { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .tag { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); background: var(--sunk); }
+  .cited, .terms { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+  .acts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; align-items: center; }
+  .acts a { color: var(--accent); text-underline-offset: 2px; }
+  .full { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; font: 16px/1.65 var(--serif); max-height: 70vh; overflow: auto; overflow-wrap: anywhere; }
+  .full p { margin: 0 0 .75em; max-width: 82ch; }
+  .arts { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 18px; margin-bottom: 12px; }
+  .arts h3 { font: 650 14.5px var(--sans); margin: 0 0 2px; }
+  .arts .chip { cursor: pointer; }
   .arts .chip[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
-  .arts .chip .n { color: var(--ink-3); font-size: 12px; }
-  .arts .opt { font-size: 12.5px; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; }
-  .cited { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
-  .src { font-size: 11px; padding: 0 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
+  .arts .chip .n { color: var(--ink-3); font-size: 12.5px; }
+  .arts .opt { font-size: 12.5px; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; }
+  footer.foot { font-size: 12.5px; color: var(--ink-3); padding-top: 12px; padding-bottom: 36px; }
+  footer.foot details > summary { cursor: pointer; font-weight: 600; color: var(--ink-2); font-size: 13px; }
+  footer.foot p { max-width: 90ch; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="wrap">
-    <p class="eyebrow">Prototype de test · outil interne non officiel</p>
     <h1>Recherche de jurisprudence administrative</h1>
-    <p class="sub">Conseil d'État, cours administratives d'appel et tribunaux administratifs. Les décisions proviennent en direct de l'open data de la justice administrative et, après connexion, de Légifrance.</p>
+    <p class="tagline">Outil interne du service, non officiel</p>
   </div>
 </header>
 
 <main>
-  <section class="panel form" aria-label="Critères de recherche">
-    <div class="field lead">
-      <label class="lbl" for="moyen">Moyen à contrer</label>
-      <select id="moyen"><option value="">Aucun : recherche libre par mots-clés</option></select>
-      <label class="lbl" for="mesure" style="margin-top:10px">Mesure contestée</label>
-      <select id="mesure">
-        <option value="all">Sport et accueils de mineurs</option>
-        <option value="sport">Sport (L. 212-13 du code du sport)</option>
-        <option value="acm">Accueils de mineurs (L. 227-10 et L. 227-11 CASF)</option>
-      </select>
-      <p class="hint" id="moyenHint">Choisissez l'argument du requérant : la page cherche les décisions rendues sur ces mesures et montre comment le juge y a répondu.</p>
-    </div>
-    <div class="field">
-      <label class="lbl" for="kw">Mots-clés</label>
-      <input type="text" id="kw" autocomplete="off" spellcheck="false" placeholder='ex. "accueil collectif de mineurs" suspension'>
-      <p class="hint">Tous les mots sont obligatoires. Guillemets pour une expression exacte, tiret devant un mot pour l'exclure (-urbanisme).</p>
+  <div class="wrap">
+  <section class="deck" aria-label="Recherche">
+    <div class="seg" role="tablist" aria-label="Type de recherche">
+      <button type="button" role="tab" id="tabMoyen" aria-selected="true" aria-controls="paneMoyen">Par moyen</button>
+      <button type="button" role="tab" id="tabLibre" aria-selected="false" aria-controls="paneLibre">Recherche libre</button>
     </div>
 
-    <div class="field">
-      <label class="lbl" for="free">Description libre du cas <span style="font-weight:400;color:var(--ink-3)">(facultatif)</span></label>
-      <textarea id="free" autocomplete="off" placeholder="Décrivez les faits en quelques phrases, sans aucun nom."></textarea>
+    <div id="paneMoyen" role="tabpanel" aria-labelledby="tabMoyen">
+      <h2 class="q" id="qMoyen">Quel argument du requérant devez-vous contrer ?</h2>
+      <p class="lede">La page retrouve les décisions rendues sur vos mesures et montre, pour chacune, comment le juge a répondu à cet argument.</p>
+      <div class="choices" id="moyenGrid" role="radiogroup" aria-labelledby="qMoyen"></div>
+      <div class="line">
+        <span class="lbl" id="mesureL">Mesure contestée</span>
+        <div class="seg small" id="mesureSeg" role="group" aria-labelledby="mesureL">
+          <button type="button" data-v="all" aria-pressed="true">Les deux</button>
+          <button type="button" data-v="sport" aria-pressed="false" title="L. 212-13 du code du sport">Sport</button>
+          <button type="button" data-v="acm" aria-pressed="false" title="L. 227-10 et L. 227-11 du code de l'action sociale et des familles">Accueils de mineurs</button>
+        </div>
+      </div>
+      <select id="moyen" hidden><option value=""></option></select>
+      <select id="mesure" hidden><option value="all"></option><option value="sport"></option><option value="acm"></option></select>
+    </div>
+
+    <div id="paneLibre" role="tabpanel" aria-labelledby="tabLibre" hidden>
+      <h2 class="q">Que cherchez-vous ?</h2>
+      <p class="lede">Saisissez des mots-clés, ou décrivez le cas : la page en extrait les termes utiles. Ce texte ne quitte pas votre poste.</p>
+      <label class="lbl" for="free">Description du cas, sans aucun nom (facultatif)</label>
+      <textarea id="free" autocomplete="off" placeholder="Quelques phrases sur les faits et la mesure contestée."></textarea>
       <div class="row" style="margin-top:8px">
         <button type="button" id="extract">Extraire les termes</button>
-        <span class="hint" style="margin:0">Ce texte ne quitte pas votre poste.</span>
       </div>
       <div id="chips" class="chips" aria-live="polite"></div>
       <p id="legend" class="legend" hidden>Cliquez sur un terme pour changer son rôle : <b>obligatoire</b> (doit figurer dans la décision), <b>bonus</b> (sert seulement au classement), <b>ignoré</b>.</p>
     </div>
 
-    <div class="field">
-      <span class="lbl">Sources</span>
-      <div class="checks">
-        <label><input type="checkbox" id="srcOD" checked> Open data (depuis 2021-2022)</label>
-        <label><input type="checkbox" id="srcLF" disabled> Légifrance (fonds historique)</label>
+    <div class="searchrow">
+      <div>
+        <label class="lbl" for="kw" id="kwL">Mots-clés complémentaires (facultatif)</label>
+        <input type="text" id="kw" autocomplete="off" spellcheck="false" placeholder="ex. animateur, bénévole">
       </div>
-      <details class="more" id="lfBox">
-        <summary id="lfSum">Connexion à Légifrance (PISTE)</summary>
-        <div class="conn">
-          <label id="lfEnvRow">Environnement
-            <select id="lfEnv">
-              <option value="prod">Production (données réelles)</option>
-              <option value="sandbox">Bac à sable (données de test)</option>
-            </select>
-          </label>
-          <label><span id="lfTokText">Jeton d'accès (valable environ une heure)</span>
-            <input type="password" id="lfTok" autocomplete="off" spellcheck="false" style="width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px">
-          </label>
-          <div class="row">
-            <button type="button" id="lfConnect">Se connecter</button>
-            <button type="button" id="lfOut" hidden>Se déconnecter</button>
-          </div>
-          <p id="lfState" class="state" role="status" aria-live="polite">Non connecté.</p>
-          <details>
-            <summary style="font-size:12.5px;cursor:pointer;color:var(--ink-3)">Diagnostic technique</summary>
-            <pre id="lfDiag">Aucun essai pour l'instant.</pre>
-            <button type="button" class="link" id="lfCopy" style="font-size:12.5px">Copier le diagnostic</button>
-          </details>
-          <p class="hint" id="lfHint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part, en double-cliquant sur le fichier « obtenir-jeton-legifrance.cmd » fourni avec la page, puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
-        </div>
-      </details>
-    </div>
-
-    <div class="field">
-      <span class="lbl">Juridictions</span>
-      <div class="checks">
-        <label><input type="checkbox" id="lvCE" checked> Conseil d'État</label>
-        <label><input type="checkbox" id="lvCAA" checked> Cours d'appel</label>
-        <label><input type="checkbox" id="lvTA" checked> Tribunaux</label>
-      </div>
-      <details class="more">
-        <summary>Choisir des juridictions précises</summary>
-        <div id="courts" class="courts"></div>
-        <p class="hint">Si au moins une case est cochée ici, elle remplace le choix ci-dessus.</p>
-      </details>
-    </div>
-
-    <div class="field">
-      <span class="lbl">Période (date de la décision)</span>
-      <div class="row two">
-        <label><span class="hint" style="margin:0 0 3px;display:block">Du</span><input type="date" id="d1"></label>
-        <label><span class="hint" style="margin:0 0 3px;display:block">Au</span><input type="date" id="d2"></label>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="lbl" for="nb">Nombre de décisions analysées</label>
-      <select id="nb">
-        <option value="20">20 (rapide)</option>
-        <option value="50" selected>50</option>
-        <option value="100">100 (plus lent)</option>
-        <option value="200">200 (très lent, pour un moyen)</option>
-      </select>
-    </div>
-
-    <div class="row">
       <button type="button" class="primary" id="go">Rechercher</button>
-      <button type="button" id="reset">Tout effacer</button>
+      <button type="button" class="quiet" id="reset">Tout effacer</button>
     </div>
+    <p class="hint" id="kwHint">Tous les mots sont obligatoires. Guillemets pour une expression exacte, tiret devant un mot pour l'exclure.</p>
+
+    <details class="opts" id="opts">
+      <summary>Options : sources, juridictions, période</summary>
+      <div class="optgrid">
+        <div>
+          <span class="lbl">Sources</span>
+          <div class="checks">
+            <label><input type="checkbox" id="srcOD" checked> Open data (depuis 2021-2022)</label>
+            <label><input type="checkbox" id="srcLF" disabled> Légifrance (décisions plus anciennes)</label>
+          </div>
+          <details class="more" id="lfBox">
+            <summary id="lfSum">Connexion à Légifrance (PISTE)</summary>
+            <div class="conn">
+              <label id="lfEnvRow">Environnement
+                <select id="lfEnv">
+                  <option value="prod">Production (données réelles)</option>
+                  <option value="sandbox">Bac à sable (données de test)</option>
+                </select>
+              </label>
+              <label><span id="lfTokText">Jeton d'accès (valable environ une heure)</span>
+                <input type="password" id="lfTok" autocomplete="off" spellcheck="false">
+              </label>
+              <div class="row">
+                <button type="button" id="lfConnect">Se connecter</button>
+                <button type="button" id="lfOut" hidden>Se déconnecter</button>
+              </div>
+              <p id="lfState" class="state" role="status" aria-live="polite">Non connecté.</p>
+              <details>
+                <summary style="font-size:12.5px;cursor:pointer;color:var(--ink-3)">Diagnostic technique</summary>
+                <pre id="lfDiag">Aucun essai pour l'instant.</pre>
+                <button type="button" class="link" id="lfCopy" style="font-size:12.5px">Copier le diagnostic</button>
+              </details>
+              <p class="hint" id="lfHint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part, en double-cliquant sur le fichier « obtenir-jeton-legifrance.cmd » fourni avec la page, puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
+            </div>
+          </details>
+        </div>
+        <div>
+          <span class="lbl">Juridictions</span>
+          <div class="checks">
+            <label><input type="checkbox" id="lvCE" checked> Conseil d'État</label>
+            <label><input type="checkbox" id="lvCAA" checked> Cours d'appel</label>
+            <label><input type="checkbox" id="lvTA" checked> Tribunaux</label>
+          </div>
+          <details class="more">
+            <summary>Choisir des juridictions précises</summary>
+            <div id="courts" class="courts"></div>
+            <p class="hint">Si au moins une case est cochée ici, elle remplace le choix ci-dessus.</p>
+          </details>
+        </div>
+        <div>
+          <span class="lbl">Période (date de la décision)</span>
+          <div class="row two">
+            <label><span class="hint" style="margin:0 0 3px;display:block">Du</span><input type="date" id="d1"></label>
+            <label><span class="hint" style="margin:0 0 3px;display:block">Au</span><input type="date" id="d2"></label>
+          </div>
+        </div>
+        <div>
+          <label class="lbl" for="nb">Nombre de décisions lues</label>
+          <select id="nb">
+            <option value="20">20 (rapide)</option>
+            <option value="50" selected>50</option>
+            <option value="100">100 (plus lent)</option>
+            <option value="200">200 (très lent)</option>
+          </select>
+          <p class="hint">Chaque décision est lue en entier pour repérer la réponse du juge.</p>
+        </div>
+      </div>
+    </details>
   </section>
 
-  <section aria-label="Résultats">
+  <section class="results" aria-label="Résultats">
     <div class="results-head">
       <h2 id="rtitle">Résultats</h2>
       <div class="ctl">
@@ -330,21 +323,24 @@
     <div id="out">
       <div class="empty">
         <h3>Aucune recherche en cours</h3>
-        <ol>
-          <li>Saisissez des mots-clés, ou décrivez le cas puis cliquez sur « Extraire les termes ».</li>
-          <li>Ajustez si besoin les juridictions et la période.</li>
-          <li>Lancez la recherche : les décisions sont lues puis classées par pertinence.</li>
-        </ol>
+        <p>Choisissez un argument ci-dessus, puis lancez la recherche. Les décisions où le juge y répond s'affichent en premier.</p>
       </div>
     </div>
   </section>
+  </div>
 </main>
 
 <footer class="foot">
+  <div class="wrap">
+    <details>
+      <summary>Confidentialité, couverture et limites de l'outil</summary>
+
   <p id="hostNote" hidden>Version hébergée : les recherches Légifrance passent par le relais du service, qui obtient l'accès à votre place. Il ne conserve ni les termes recherchés ni les résultats. Les recherches open data partent directement de votre poste.</p>
   <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis aux moteurs de recherche (open data et, si vous l'avez connecté, Légifrance) ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
   <p>Couverture de l'open data : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Pour les décisions plus anciennes, connectez Légifrance, qui couvre surtout le Conseil d'État et les cours administratives d'appel.</p>
   <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. La « réponse au moyen » est repérée automatiquement dans les motifs, d'après les formules habituelles du juge (« doit être écarté », « est fondé à soutenir »…) : relisez toujours le passage dans la décision avant de le citer, et vérifiez qu'il est transposable à votre dossier. Le « dispositif » affiché sous chaque décision est lu automatiquement à la fin du texte : l'étiquette (rejet, annulation…) est indicative et ne dit pas à elle seule qui obtient gain de cause, notamment en appel. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
+    </details>
+  </div>
 </footer>
 
 <script>
@@ -422,6 +418,7 @@
   var controller = null;
   var artFilter = '';           // article de code servant de filtre
   var moyenRun = null;          // moyen de la recherche en cours (null en recherche libre)
+  var mode = 'moyen';           // onglet actif : 'moyen' ou 'libre'
   var showCJA = false;          // inclure le code de justice administrative dans le panneau
 
   // --- Normalisation (longueur conservée, pour pouvoir surligner) ----------
@@ -516,7 +513,7 @@
   // --- Construction de la requête ------------------------------------------
   function collectTerms() {
     var terms = parseKeywords($('kw').value).map(function (t) { return { text: t.text, role: t.role }; });
-    freeTerms.forEach(function (t) { if (t.state !== 'off') terms.push({ text: cleanTerm(t.text), role: t.state }); });
+    if (mode === 'libre') freeTerms.forEach(function (t) { if (t.state !== 'off') terms.push({ text: cleanTerm(t.text), role: t.state }); });
     var seen = {}, out = [];
     terms.forEach(function (t) {
       var k = norm(t.text);
@@ -1330,14 +1327,14 @@
       if (h._c) {
         var cl = Object.keys(h._c).map(function (k) { return h._c[k]; }).filter(function (a) { return !a.cja; })
           .sort(function (a, b) { return b.count - a.count; }).slice(0, 6).map(function (a) { return a.label; });
-        if (cl.length) li.appendChild(el('div', 'cited', 'Articles cités : ' + cl.join(' · ')));
+        if (cl.length) li.appendChild(el('div', 'cited', 'Articles cités : ' + cl.join(', ')));
       }
       if (h._d) {
         var dv = el('div', 'disp');
         var tg = el('div', 'tags');
         tg.appendChild(el('span', 'lab', 'Dispositif'));
         if (h._d.tags.length) h._d.tags.forEach(function (t) { tg.appendChild(el('span', 'tag', t)); });
-        else tg.appendChild(el('span', 'lab', '· issue non reconnue'));
+        else tg.appendChild(el('span', 'tag', 'issue non reconnue'));
         dv.appendChild(tg);
         h._d.arts.forEach(function (a) {
           var tx = a.text.length > 260 ? a.text.slice(0, 260).replace(/\s+\S*$/, '') + ' …' : a.text;
@@ -1352,7 +1349,7 @@
         mv.dataset.s = h._m.status;
         var hd = el('div', 'head');
         hd.appendChild(el('span', 'verdict', VERDICT[h._m.status]));
-        hd.appendChild(el('span', null, moyenRun.moyen.label + (hasPoint && h._m.main.n ? ' · point ' + h._m.main.n : '')));
+        hd.appendChild(el('span', null, moyenRun.moyen.label + (hasPoint && h._m.main.n ? ', point ' + h._m.main.n : '')));
         mv.appendChild(hd);
         if (hasPoint) {
           var full = h._m.main.text.replace(/\s*\n\s*/g, ' ');
@@ -1385,7 +1382,7 @@
           li.appendChild(p);
         });
         if (h._a.found.length) {
-          var f = h._a.found.slice().sort(function (x, y) { return y.count - x.count; }).map(function (x) { return x.text + ' ×' + x.count; }).join(' · ');
+          var f = h._a.found.slice().sort(function (x, y) { return y.count - x.count; }).map(function (x) { return x.text + ' ×' + x.count; }).join(', ');
           li.appendChild(el('div', 'terms', 'Termes trouvés (' + h._a.found.length + '/' + h._a.scored + ') : ' + f));
         }
       } else if (h._err) {
@@ -1447,7 +1444,8 @@
     var q = queryString(terms);
     setMsg('', '');
     var moyen = null, groups = null, mesure = $('mesure').value;
-    MOYENS.forEach(function (m) { if (m.id === $('moyen').value) moyen = m; });
+    if (mode === 'moyen') MOYENS.forEach(function (m) { if (m.id === $('moyen').value) moyen = m; });
+    if (mode === 'moyen' && !moyen) { setMsg('warn', 'Choisissez d\'abord l\'argument à contrer.'); return; }
     if (moyen) {
       groups = [MESURES[mesure].any, moyen.any];
       // Le moteur open data refuse une requête qui se termine par une parenthèse : on finit par un mot présent partout.
@@ -1457,7 +1455,7 @@
       moyen.hl.forEach(function (w) { if (!known[norm(w)]) terms.push({ text: w, role: 'bonus', re: termRegex(w) }); });
     }
     if (!moyen && !terms.some(function (t) { return t.role === 'must'; })) {
-      setMsg('warn', 'Indiquez au moins un terme obligatoire : un mot-clé, ou un terme extrait du texte libre placé en « obligatoire ».');
+      setMsg('warn', 'Indiquez au moins un mot-clé, ou décrivez le cas puis placez un terme extrait en « obligatoire ».');
       return;
     }
     var useOD = $('srcOD').checked, useLF = $('srcLF').checked && lf.ok;
@@ -1567,6 +1565,24 @@
     }
   }
 
+  // Reflète dans les boutons le moyen et la mesure choisis.
+  function syncChoices() {
+    Array.prototype.forEach.call($('moyenGrid').querySelectorAll('.choice'), function (b) {
+      b.setAttribute('aria-checked', b.dataset.v === $('moyen').value ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call($('mesureSeg').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.v === $('mesure').value ? 'true' : 'false');
+    });
+  }
+  function setMode(m) {
+    mode = m;
+    var isM = m === 'moyen';
+    $('tabMoyen').setAttribute('aria-selected', isM ? 'true' : 'false');
+    $('tabLibre').setAttribute('aria-selected', isM ? 'false' : 'true');
+    $('paneMoyen').hidden = !isM; $('paneLibre').hidden = isM;
+    $('kwL').textContent = isM ? 'Mots-clés complémentaires (facultatif)' : 'Mots-clés';
+    $('kw').placeholder = isM ? 'ex. animateur, bénévole' : 'ex. "accueil collectif de mineurs" suspension';
+  }
   function resetAll() {
     if (controller) controller.abort();
     current = { id: current.id + 1, hits: [], terms: [], total: 0, analysed: false };
@@ -1575,7 +1591,7 @@
     $('kw').value = ''; $('free').value = ''; $('d1').value = ''; $('d2').value = '';
     $('lvCE').checked = $('lvCAA').checked = $('lvTA').checked = true;
     Array.prototype.forEach.call(document.querySelectorAll('#courts input'), function (i) { i.checked = false; });
-    $('nb').value = '50'; $('sort').value = 'rel'; artFilter = ''; showCJA = false; moyenRun = null; $('moyen').value = ''; $('mesure').value = 'all'; fillIssues(); fillMoyenF();
+    $('nb').value = '50'; $('sort').value = 'rel'; artFilter = ''; showCJA = false; moyenRun = null; $('moyen').value = ''; $('mesure').value = 'all'; syncChoices(); fillIssues(); fillMoyenF();
     renderChips();
     setStatus(''); setMsg('', '');
     $('rtitle').textContent = 'Résultats';
@@ -1583,7 +1599,7 @@
     $('out').textContent = '';
     var e = el('div', 'empty');
     e.appendChild(el('h3', null, 'Tout a été effacé'));
-    e.appendChild(el('p', null, 'Saisissez de nouveaux critères pour lancer une recherche.'));
+    e.appendChild(el('p', null, 'Choisissez un argument ou saisissez des mots-clés pour lancer une recherche.'));
     $('out').appendChild(e);
   }
 
@@ -1625,7 +1641,19 @@
   $('sort').addEventListener('change', renderResults);
   $('issue').addEventListener('change', renderResults);
   $('moyenF').addEventListener('change', renderResults);
-  MOYENS.forEach(function (m) { var o = document.createElement('option'); o.value = m.id; o.textContent = m.label; $('moyen').appendChild(o); });
+  MOYENS.forEach(function (m) {
+    var o = document.createElement('option'); o.value = m.id; o.textContent = m.label; $('moyen').appendChild(o);
+    var b = el('button', 'choice', m.label);
+    b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.v = m.id;
+    b.addEventListener('click', function () { $('moyen').value = m.id; syncChoices(); setMsg('', ''); });
+    $('moyenGrid').appendChild(b);
+  });
+  Array.prototype.forEach.call($('mesureSeg').querySelectorAll('button'), function (b) {
+    b.addEventListener('click', function () { $('mesure').value = b.dataset.v; syncChoices(); });
+  });
+  $('tabMoyen').addEventListener('click', function () { setMode('moyen'); });
+  $('tabLibre').addEventListener('click', function () { setMode('libre'); });
+  syncChoices(); setMode('moyen');
 })();
 </script>
 </body>
