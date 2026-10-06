@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Recherche de jurisprudence administrative – prototype</title>
+<style>
+  :root {
+    --bg: #f4f2ec;
+    --surface: #ffffff;
+    --surface-2: #faf8f3;
+    --ink: #1b2330;
+    --ink-2: #4c5766;
+    --ink-3: #6f7a88;
+    --line: #dcd7cb;
+    --accent: #1f3a68;
+    --accent-ink: #ffffff;
+    --accent-soft: #e4ebf6;
+    --must: #1f3a68;
+    --bonus: #6b5a1e;
+    --bonus-soft: #f3ecd2;
+    --off: #8a8f97;
+    --mark: #ffe59a;
+    --mark-ink: #1b2330;
+    --warn-bg: #fdf1dc;
+    --warn-ink: #6a4706;
+    --err-bg: #fbe6e3;
+    --err-ink: #7d1f15;
+    --radius: 6px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161c;
+      --surface: #1a2029;
+      --surface-2: #202733;
+      --ink: #e8ebf0;
+      --ink-2: #b4bcc8;
+      --ink-3: #8c96a4;
+      --line: #313a48;
+      --accent: #9dbcf0;
+      --accent-ink: #0f1620;
+      --accent-soft: #23314a;
+      --must: #9dbcf0;
+      --bonus: #e0cd86;
+      --bonus-soft: #3a3420;
+      --off: #7c8592;
+      --mark: #7a6312;
+      --mark-ink: #fff8dc;
+      --warn-bg: #3a2f17;
+      --warn-ink: #f2dca6;
+      --err-bg: #40201c;
+      --err-ink: #f6c9c2;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 var(--sans);
+  }
+  header.top {
+    padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  header.top .wrap, main { max-width: 1240px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 4px;
+  }
+  h1 { font: 600 25px/1.2 var(--serif); margin: 0; letter-spacing: -.005em; }
+  header.top p.sub { margin: 6px 0 0; color: var(--ink-2); max-width: 70ch; }
+  main {
+    display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: 24px; padding: 24px; align-items: start;
+  }
+  @media (max-width: 860px) {
+    main { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+    header.top { padding: 18px 16px 14px; }
+  }
+  .panel {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px;
+  }
+  @media (min-width: 861px) { .panel.form { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; } }
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label.lbl, .lbl { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 5px; }
+  .hint { font-size: 12.5px; color: var(--ink-3); margin: 4px 0 0; }
+  input[type=text], input[type=date], textarea, select {
+    width: 100%; font: inherit; color: var(--ink); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px;
+  }
+  textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
+  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  button {
+    font: inherit; cursor: pointer; border-radius: var(--radius);
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+    padding: 7px 12px;
+  }
+  button:hover { border-color: var(--ink-3); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 9px 16px; }
+  button.primary:hover { filter: brightness(1.08); }
+  button.link { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  button[disabled] { opacity: .55; cursor: default; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row.two > * { flex: 1 1 130px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+  details.more { margin-top: 8px; }
+  details.more summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+  .courts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px 10px; margin-top: 8px; max-height: 190px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
+  .courts label { font-size: 13px; display: flex; gap: 6px; align-items: center; }
+  .courts .grp { grid-column: 1 / -1; font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); margin-top: 4px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+    border-radius: 999px; padding: 3px 10px 3px 8px; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--ink);
+  }
+  .chip .st { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+  .chip[data-state=must] { border-color: var(--must); background: var(--accent-soft); }
+  .chip[data-state=must] .st { color: var(--must); }
+  .chip[data-state=bonus] { border-color: var(--bonus); background: var(--bonus-soft); }
+  .chip[data-state=bonus] .st { color: var(--bonus); }
+  .chip[data-state=off] { color: var(--off); border-style: dashed; }
+  .chip[data-state=off] .w { text-decoration: line-through; }
+  .legend { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+  .legend b { color: var(--ink-2); font-weight: 600; }
+
+  .note { font-size: 12.5px; border-radius: var(--radius); padding: 9px 11px; margin: 0; }
+  .note.warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .note.err { background: var(--err-bg); color: var(--err-ink); }
+  .note.info { background: var(--accent-soft); color: var(--ink); }
+
+  .results-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .results-head h2 { font: 600 18px/1.3 var(--serif); margin: 0; }
+  .results-head .ctl { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .results-head select { width: auto; padding: 5px 8px; }
+  .status { font-size: 13px; color: var(--ink-2); margin: 0 0 12px; min-height: 1.4em; }
+  progress { width: 160px; height: 8px; vertical-align: middle; accent-color: var(--accent); }
+  .empty { color: var(--ink-2); padding: 34px 20px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); }
+  .empty h3 { font: 600 17px var(--serif); margin: 0 0 6px; color: var(--ink); }
+  .empty ol { text-align: left; display: inline-block; margin: 8px 0 0; padding-left: 20px; }
+
+  ol.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .card .ref { font: 600 16px/1.35 var(--serif); margin: 0; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--accent); color: var(--accent); }
+  .rel { display: inline-flex; gap: 6px; align-items: center; }
+  .dots { display: inline-flex; gap: 2px; }
+  .dots i { width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--accent); display: inline-block; }
+  .dots i.on { background: var(--accent); }
+  .ex { margin: 9px 0 0; font-size: 14px; color: var(--ink-2); font-family: var(--serif); line-height: 1.5; overflow-wrap: anywhere; }
+  .ex + .ex { margin-top: 5px; }
+  mark { background: var(--mark); color: var(--mark-ink); padding: 0 1px; border-radius: 2px; }
+  .terms { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+  .acts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 13.5px; align-items: center; }
+  .acts a { color: var(--accent); text-underline-offset: 2px; }
+  .full { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; font-family: var(--serif); font-size: 15px; line-height: 1.6; max-height: 70vh; overflow: auto; overflow-wrap: anywhere; }
+  .full p { margin: 0 0 .7em; }
+  footer.foot { max-width: 1240px; margin: 0 auto; padding: 0 24px 32px; font-size: 12.5px; color: var(--ink-3); }
+  @media (max-width: 860px) { footer.foot { padding: 0 16px 24px; } }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Prototype de test · outil interne non officiel</p>
+    <h1>Recherche de jurisprudence administrative</h1>
+    <p class="sub">Conseil d'État, cours administratives d'appel et tribunaux administratifs. Les décisions proviennent en direct de l'open data de la justice administrative.</p>
+  </div>
+</header>
+
+<main>
+  <section class="panel form" aria-label="Critères de recherche">
+    <div class="field">
+      <label class="lbl" for="kw">Mots-clés</label>
+      <input type="text" id="kw" autocomplete="off" spellcheck="false" placeholder='ex. "accueil collectif de mineurs" suspension'>
+      <p class="hint">Tous les mots sont obligatoires. Guillemets pour une expression exacte, tiret devant un mot pour l'exclure (-urbanisme).</p>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="free">Description libre du cas <span style="font-weight:400;color:var(--ink-3)">(facultatif)</span></label>
+      <textarea id="free" autocomplete="off" placeholder="Décrivez les faits en quelques phrases, sans aucun nom."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button type="button" id="extract">Extraire les termes</button>
+        <span class="hint" style="margin:0">Ce texte ne quitte pas votre poste.</span>
+      </div>
+      <div id="chips" class="chips" aria-live="polite"></div>
+      <p id="legend" class="legend" hidden>Cliquez sur un terme pour changer son rôle : <b>obligatoire</b> (doit figurer dans la décision), <b>bonus</b> (sert seulement au classement), <b>ignoré</b>.</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Juridictions</span>
+      <div class="checks">
+        <label><input type="checkbox" id="lvCE" checked> Conseil d'État</label>
+        <label><input type="checkbox" id="lvCAA" checked> Cours d'appel</label>
+        <label><input type="checkbox" id="lvTA" checked> Tribunaux</label>
+      </div>
+      <details class="more">
+        <summary>Choisir des juridictions précises</summary>
+        <div id="courts" class="courts"></div>
+        <p class="hint">Si au moins une case est cochée ici, elle remplace le choix ci-dessus.</p>
+      </details>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Période (date de la décision)</span>
+      <div class="row two">
+        <label><span class="hint" style="margin:0 0 3px;display:block">Du</span><input type="date" id="d1"></label>
+        <label><span class="hint" style="margin:0 0 3px;display:block">Au</span><input type="date" id="d2"></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="nb">Nombre de décisions analysées</label>
+      <select id="nb">
+        <option value="20">20 (rapide)</option>
+        <option value="50" selected>50</option>
+        <option value="100">100 (plus lent)</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <button type="button" class="primary" id="go">Rechercher</button>
+      <button type="button" id="reset">Tout effacer</button>
+    </div>
+  </section>
+
+  <section aria-label="Résultats">
+    <div class="results-head">
+      <h2 id="rtitle">Résultats</h2>
+      <div class="ctl">
+        <label for="sort">Classer par</label>
+        <select id="sort">
+          <option value="rel">pertinence</option>
+          <option value="date">date (récent d'abord)</option>
+        </select>
+      </div>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <div id="msg"></div>
+    <div id="out">
+      <div class="empty">
+        <h3>Aucune recherche en cours</h3>
+        <ol>
+          <li>Saisissez des mots-clés, ou décrivez le cas puis cliquez sur « Extraire les termes ».</li>
+          <li>Ajustez si besoin les juridictions et la période.</li>
+          <li>Lancez la recherche : les décisions sont lues puis classées par pertinence.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis au moteur de recherche de l'open data ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
+  <p>Couverture de la base : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Les décisions plus anciennes n'y figurent presque pas.</p>
+  <p>Limite à connaître : le moteur public renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var API = 'https://opendata.justice-administrative.fr/recherche/api/';
+  var SHARE = 'https://opendata.justice-administrative.fr/recherche/shareFile/';
+
+  // Juridictions présentes dans la base (relevé du 6 octobre 2026).
+  var COURTS = [
+    ['CE', "Conseil d'État", 'CE'],
+    ['CAA33', 'CAA Bordeaux', 'CAA'], ['CAA59', 'CAA Douai', 'CAA'], ['CAA69', 'CAA Lyon', 'CAA'],
+    ['CAA13', 'CAA Marseille', 'CAA'], ['CAA54', 'CAA Nancy', 'CAA'], ['CAA44', 'CAA Nantes', 'CAA'],
+    ['CAA75', 'CAA Paris', 'CAA'], ['CAA31', 'CAA Toulouse', 'CAA'], ['CAA78', 'CAA Versailles', 'CAA'],
+    ['TA80', 'TA Amiens', 'TA'], ['TA20', 'TA Bastia', 'TA'], ['TA25', 'TA Besançon', 'TA'],
+    ['TA33', 'TA Bordeaux', 'TA'], ['TA14', 'TA Caen', 'TA'], ['TA95', 'TA Cergy-Pontoise', 'TA'],
+    ['TA51', 'TA Châlons-en-Champagne', 'TA'], ['TA63', 'TA Clermont-Ferrand', 'TA'], ['TA21', 'TA Dijon', 'TA'],
+    ['TA38', 'TA Grenoble', 'TA'], ['TA59', 'TA Lille', 'TA'], ['TA87', 'TA Limoges', 'TA'],
+    ['TA69', 'TA Lyon', 'TA'], ['TA13', 'TA Marseille', 'TA'], ['TA77', 'TA Melun', 'TA'],
+    ['TA34', 'TA Montpellier', 'TA'], ['TA93', 'TA Montreuil', 'TA'], ['TA54', 'TA Nancy', 'TA'],
+    ['TA44', 'TA Nantes', 'TA'], ['TA06', 'TA Nice', 'TA'], ['TA30', 'TA Nîmes', 'TA'],
+    ['TA45', 'TA Orléans', 'TA'], ['TA75', 'TA Paris', 'TA'], ['TA64', 'TA Pau', 'TA'],
+    ['TA86', 'TA Poitiers', 'TA'], ['TA35', 'TA Rennes', 'TA'], ['TA76', 'TA Rouen', 'TA'],
+    ['TA67', 'TA Strasbourg', 'TA'], ['TA83', 'TA Toulon', 'TA'], ['TA31', 'TA Toulouse', 'TA'],
+    ['TA78', 'TA Versailles', 'TA'],
+    ['TA105', 'TA Guadeloupe', 'TA'], ['TA106', 'TA Guyane', 'TA'], ['TA101', 'TA La Réunion', 'TA'],
+    ['TA102', 'TA Martinique', 'TA'], ['TA107', 'TA Mayotte', 'TA'], ['TA104', 'TA Nouvelle-Calédonie', 'TA'],
+    ['TA103', 'TA Polynésie française', 'TA'], ['TA109', 'TA Saint-Barthélemy', 'TA'], ['TA108', 'TA Saint-Martin', 'TA']
+  ];
+  var COURT_NAME = {};
+  COURTS.forEach(function (c) { COURT_NAME[c[0]] = c[1]; });
+
+  var STOP = ('a à afin ai ainsi alors après assez au aucun aucune aujourd auprès aussi autre autres aux avait avaient avant avec avoir ayant ' +
+    'beaucoup bien bon car ce ceci cela celle celles celui cependant certain certaine certaines certains ces cet cette ceux chaque chez ' +
+    'comme comment contre dans de depuis des deux devant doit doivent donc dont du durant elle elles en encore enfin entre environ est et ' +
+    'etaient etait etant etc ete etre eu eux fait faire fais faisait faite faites fois font furent fut hors ici il ils je jusqu jusque la le ' +
+    'les leur leurs lors lorsque lui ma mais me meme memes mes moi moins mon ne ni non nos notre nous on ont ou où par parce pas pendant ' +
+    'peu peut peuvent plus plusieurs pour pourquoi pourrait puis qu quand que quel quelle quelles quelque quelques quels qui quoi sa sans ' +
+    'sauf se selon sera seront ses si soit son sont sous souvent suis suite sur ta tandis tant te tel telle telles tels tes toi ton tous tout ' +
+    'toute toutes tres trois trop tu un une vers via voici voila vos votre vous vu ' +
+    'madame monsieur mme mlle sieur dame personne personnes chose choses cas affaire situation question notamment egalement toutefois ' +
+    'ensuite ainsi autres dernier derniere premier premiere nouveau nouvelle jour jours mois annee annees semaine heure heures ' +
+    'janvier fevrier mars avril mai juin juillet aout septembre octobre novembre decembre lundi mardi mercredi jeudi vendredi samedi dimanche ' +
+    'souhaite souhaitons voudrais voudrait savoir existe concernant suivant suivante plusieurs');
+  var STOPSET = {};
+  STOP.split(/\s+/).forEach(function (w) { STOPSET[w] = 1; });
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+
+  // --- État, en mémoire uniquement -----------------------------------------
+  var freeTerms = [];           // [{text, state: 'must' | 'bonus' | 'off', proper}]
+  var textCache = new Map();    // id de décision -> texte intégral
+  var current = { id: 0, hits: [], terms: [], total: 0, analysed: false };
+  var controller = null;
+
+  // --- Normalisation (longueur conservée, pour pouvoir surligner) ----------
+  function norm(s) {
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      if (ch === '’' || ch === '‘' || ch === '`') { out += "'"; continue; }
+      if (ch === ' ' || ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r') { out += ' '; continue; }
+      var d = ch.normalize('NFD').charAt(0).toLowerCase();
+      out += d.length === 1 ? d : d.charAt(0);
+    }
+    return out;
+  }
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function cleanTerm(s) {
+    return s.replace(/[’‘`]/g, "'")
+      .replace(/[+"()\[\]{}:\/\\*?~^!&|<>=#%;,.]/g, ' ')
+      .replace(/(^|\s)-+/g, '$1')
+      .replace(/\s+/g, ' ').trim();
+  }
+  function termRegex(text) {
+    var n = norm(cleanTerm(text));
+    if (!n) return null;
+    var parts = n.split(' ').map(escRe);
+    var body = parts.join("[\\s'\\-]+");
+    var tail = (parts.length === 1 && n.length >= 5) ? '[a-z]*' : (parts.length > 1 ? 's?' : '');
+    try { return new RegExp('(?<![a-z0-9])' + body + tail + '(?![a-z0-9])', 'g'); }
+    catch (e) { return new RegExp(body, 'g'); }
+  }
+
+  // --- Mots-clés saisis -----------------------------------------------------
+  function parseKeywords(raw) {
+    var s = raw.replace(/[«»“”„]/g, '"');
+    var re = /(-?)"([^"]+)"|(-?)(\S+)/g, m, out = [];
+    while ((m = re.exec(s))) {
+      var excl = (m[1] || m[3]) === '-';
+      var t = cleanTerm(m[2] != null ? m[2] : m[4]);
+      if (t.length < 2) continue;
+      out.push({ text: t, role: excl ? 'not' : 'must' });
+    }
+    return out;
+  }
+
+  // --- Extraction de termes depuis le texte libre ---------------------------
+  function extractTerms(text) {
+    var re = /[A-Za-zÀ-ÖØ-öø-ÿŒœ]+(?:-[A-Za-zÀ-ÖØ-öø-ÿŒœ]+)*/g, m;
+    var map = {}, order = [];
+    while ((m = re.exec(text))) {
+      var w = m[0], n = norm(w);
+      if (n.length < 4 || STOPSET[n]) continue;
+      var before = text.slice(0, m.index).replace(/[\s"'«(’]+$/, '');
+      var sentenceStart = before === '' || /[.!?:;\n]$/.test(text.slice(0, m.index).replace(/[ \t"'«(]+$/, '')) || /[.!?:;]$/.test(before);
+      var first = w.charAt(0);
+      var capital = first !== first.toLowerCase();
+      var afterTitle = /(^|[^A-Za-zÀ-ÿ])(M|MM|Mme|Mmes|Mlle|Me|Dr|Pr)\.?\s*$/.test(text.slice(0, m.index));
+      var proper = capital && (!sentenceStart || afterTitle);
+      if (!map[n]) { map[n] = { text: proper ? w : w.toLowerCase(), count: 0, proper: false, pos: order.length }; order.push(n); }
+      map[n].count++;
+      if (proper) { map[n].proper = true; map[n].text = w; }
+    }
+    var items = order.map(function (k) { return map[k]; });
+    var common = items.filter(function (t) { return !t.proper; });
+    common.sort(function (a, b) { return (b.count - a.count) || (b.text.length - a.text.length) || (a.pos - b.pos); });
+    common = common.slice(0, 14);
+    var res = common.map(function (t, i) { return { text: t.text, state: i < 3 ? 'must' : 'bonus', proper: false }; });
+    items.filter(function (t) { return t.proper; }).slice(0, 6).forEach(function (t) {
+      res.push({ text: t.text, state: 'off', proper: true });
+    });
+    return res;
+  }
+
+  var STATE_LABEL = { must: 'obligatoire', bonus: 'bonus', off: 'ignoré' };
+  var NEXT = { must: 'bonus', bonus: 'off', off: 'must' };
+  function renderChips() {
+    var box = $('chips');
+    box.textContent = '';
+    freeTerms.forEach(function (t) {
+      var b = el('button', 'chip');
+      b.type = 'button';
+      b.dataset.state = t.state;
+      b.appendChild(el('span', 'st', STATE_LABEL[t.state]));
+      b.appendChild(el('span', 'w', t.text));
+      b.title = t.proper ? 'Semble être un nom propre : ignoré par défaut' : 'Cliquer pour changer le rôle';
+      b.setAttribute('aria-label', t.text + ' : ' + STATE_LABEL[t.state] + '. Cliquer pour changer.');
+      b.addEventListener('click', function () { t.state = NEXT[t.state]; renderChips(); });
+      box.appendChild(b);
+    });
+    $('legend').hidden = freeTerms.length === 0;
+  }
+
+  // --- Construction de la requête ------------------------------------------
+  function collectTerms() {
+    var terms = parseKeywords($('kw').value).map(function (t) { return { text: t.text, role: t.role }; });
+    freeTerms.forEach(function (t) { if (t.state !== 'off') terms.push({ text: cleanTerm(t.text), role: t.state }); });
+    var seen = {}, out = [];
+    terms.forEach(function (t) {
+      var k = norm(t.text);
+      if (!k || seen[k]) return;
+      seen[k] = 1;
+      t.re = termRegex(t.text);
+      out.push(t);
+    });
+    return out;
+  }
+  function queryString(terms) {
+    return terms.filter(function (t) { return t.role === 'must' || t.role === 'not'; }).map(function (t) {
+      var v = /\s/.test(t.text) ? '"' + t.text + '"' : t.text;
+      return (t.role === 'not' ? '-' : '+') + v;
+    }).join(' ');
+  }
+  function selectedCourts() {
+    var picked = Array.prototype.slice.call(document.querySelectorAll('#courts input:checked')).map(function (i) { return i.value; });
+    if (picked.length) return picked;
+    var lv = { CE: $('lvCE').checked, CAA: $('lvCAA').checked, TA: $('lvTA').checked };
+    if (lv.CE && lv.CAA && lv.TA) return null;           // aucune restriction
+    return COURTS.filter(function (c) { return lv[c[2]]; }).map(function (c) { return c[0]; });
+  }
+  function enc(s) { return encodeURIComponent(s).replace(/'/g, '%27'); }
+  function buildPath(q, courts, d1, d2, n) {
+    var hasDate = !!(d1 || d2);
+    if (hasDate) { d1 = d1 || '1900-01-01'; d2 = d2 || new Date().toISOString().slice(0, 10); }
+    var j = courts ? enc(courts.join(' OR ')) : null;
+    if (j && hasDate) return 'model_search_date_juri/openData/Date_Lecture/' + enc(q) + '/' + j + '/' + d1 + '/' + d2 + '/' + n;
+    if (j) return 'model_search_juri/openData/' + j + '/' + enc(q) + '/' + n;
+    if (hasDate) return 'model_searchANDdates/openData/Date_Lecture/' + enc(q) + '/' + d1 + '/' + d2 + '/' + n;
+    return 'Simple_Search/openData/' + enc(q) + '/' + n;
+  }
+
+  // --- Réseau ---------------------------------------------------------------
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function getJSON(path, signal) {
+    var lastErr;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (signal && signal.aborted) throw new DOMException('Abandon', 'AbortError');
+      var t = new AbortController();
+      var timer = setTimeout(function () { t.abort(); }, 30000);
+      var onAbort = function () { t.abort(); };
+      if (signal) signal.addEventListener('abort', onAbort);
+      try {
+        var r = await fetch(API + path, { signal: t.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var data = await r.json();
+        return data.decisions.body.hits;
+      } catch (e) {
+        lastErr = e;
+        if (signal && signal.aborted) throw new DOMException('Abandon', 'AbortError');
+        await sleep(700 * (attempt + 1));
+      } finally {
+        clearTimeout(timer);
+        if (signal) signal.removeEventListener('abort', onAbort);
+      }
+    }
+    throw lastErr;
+  }
+  async function fetchText(hit, signal) {
+    if (textCache.has(hit._id)) return textCache.get(hit._id);
+    var s = hit._source;
+    var idXml = String(s.Identification || '').replace(/\.xml$/, '');
+    var res = await getJSON('testView/openData/unHighlight/' + enc(idXml) + '/' + enc(s.Code_Juridiction) + '/' + enc(s.Numero_Dossier), signal);
+    var txt = (res.hits && res.hits[0] && res.hits[0]._source && res.hits[0]._source.paragraph) || '';
+    txt = txt.replace(/\$\$\$/g, '\n');
+    textCache.set(hit._id, txt);
+    return txt;
+  }
+
+  // --- Analyse locale d'une décision ---------------------------------------
+  function analyse(text, terms) {
+    var n = norm(text), ranges = [], found = [], score = 0, scored = 0;
+    terms.forEach(function (t, idx) {
+      if (t.role === 'not' || !t.re) return;
+      scored++;
+      t.re.lastIndex = 0;
+      var m, c = 0, first = -1;
+      while ((m = t.re.exec(n))) {
+        if (m[0].length === 0) { t.re.lastIndex++; continue; }
+        if (first < 0) first = m.index;
+        ranges.push([m.index, m.index + m[0].length, idx]);
+        c++;
+      }
+      if (c) {
+        found.push({ text: t.text, count: c, first: first, role: t.role });
+        score += (t.role === 'must' ? 2 : 3) * (1 + Math.log(c));
+      }
+    });
+    if (scored) score += 6 * (found.length / scored);
+    ranges.sort(function (a, b) { return a[0] - b[0]; });
+    return { score: score, found: found, scored: scored, ranges: ranges, roles: terms.map(function (t) { return t.role; }) };
+  }
+  function mergeRanges(ranges) {
+    var out = [];
+    ranges.forEach(function (r) {
+      var last = out[out.length - 1];
+      if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+      else out.push([r[0], r[1]]);
+    });
+    return out;
+  }
+  function highlightInto(node, text, ranges, from, to) {
+    var pos = from;
+    mergeRanges(ranges).forEach(function (r) {
+      if (r[1] <= from || r[0] >= to) return;
+      var a = Math.max(r[0], from), b = Math.min(r[1], to);
+      if (a > pos) node.appendChild(document.createTextNode(text.slice(pos, a)));
+      node.appendChild(el('mark', null, text.slice(a, b)));
+      pos = b;
+    });
+    if (pos < to) node.appendChild(document.createTextNode(text.slice(pos, to)));
+  }
+  function excerptWindows(text, a) {
+    // Fenêtres les plus denses en termes distincts (les termes « bonus » comptent double).
+    var R = a.ranges, cands = [];
+    for (var i = 0; i < R.length; i++) {
+      var seen = {}, w = 0;
+      for (var j = i; j < R.length && R[j][0] - R[i][0] <= 280; j++) {
+        if (!seen[R[j][2]]) { seen[R[j][2]] = 1; w += a.roles[R[j][2]] === 'bonus' ? 2 : 1; }
+      }
+      cands.push([w, R[i][0]]);
+    }
+    cands.sort(function (x, y) { return (y[0] - x[0]) || (x[1] - y[1]); });
+    var picks = [];
+    cands.forEach(function (c) {
+      if (picks.length >= 2) return;
+      if (picks.every(function (p) { return Math.abs(p - c[1]) > 420; })) picks.push(c[1]);
+    });
+    picks.sort(function (x, y) { return x - y; });
+    return picks.map(function (p) {
+      var from = Math.max(0, p - 60), to = Math.min(text.length, p + 300);
+      while (from > 0 && from > p - 90 && !/\s/.test(text.charAt(from - 1))) from--;
+      while (to < text.length && to < p + 330 && !/\s/.test(text.charAt(to))) to++;
+      return [from, to];
+    });
+  }
+
+  // --- Affichage ------------------------------------------------------------
+  var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function frDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    if (!m) return iso || '';
+    var d = parseInt(m[3], 10);
+    return (d === 1 ? '1er' : d) + ' ' + MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1];
+  }
+  function reference(s) {
+    var court = COURT_NAME[s.Code_Juridiction] || (s.Nom_Juridiction || '').trim() || s.Code_Juridiction;
+    if (s.Code_Juridiction === 'CE') court = 'CE';
+    var parts = [court];
+    if (s.Formation_Jugement && s.Code_Juridiction === 'CE') parts.push(String(s.Formation_Jugement).trim().toLowerCase());
+    parts.push(frDate(s.Date_Lecture));
+    parts.push('n° ' + s.Numero_Dossier);
+    return parts.join(', ');
+  }
+  function copyText(txt, btn) {
+    var done = function () { var o = btn.textContent; btn.textContent = 'Copié'; setTimeout(function () { btn.textContent = o; }, 1400); };
+    var fallback = function () {
+      var ta = document.createElement('textarea');
+      ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { /* rien */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fallback);
+    else fallback();
+  }
+  function setStatus(text, value, max) {
+    var s = $('status');
+    s.textContent = text || '';
+    if (max) {
+      var p = document.createElement('progress');
+      p.max = max; p.value = value;
+      s.appendChild(document.createTextNode(' '));
+      s.appendChild(p);
+    }
+  }
+  function setMsg(kind, text) {
+    var box = $('msg');
+    box.textContent = '';
+    if (!text) return;
+    var p = el('p', 'note ' + kind, text);
+    p.style.marginBottom = '12px';
+    box.appendChild(p);
+  }
+
+  function renderResults() {
+    var out = $('out');
+    out.textContent = '';
+    var hits = current.hits.slice();
+    if (!hits.length) return;
+    var mode = $('sort').value;
+    if (mode === 'rel' && current.analysed) {
+      hits.sort(function (a, b) { return ((b._a ? b._a.score : -1) - (a._a ? a._a.score : -1)) || String(b._source.Date_Lecture).localeCompare(String(a._source.Date_Lecture)); });
+    } else {
+      hits.sort(function (a, b) { return String(b._source.Date_Lecture).localeCompare(String(a._source.Date_Lecture)); });
+    }
+    var max = 0;
+    hits.forEach(function (h) { if (h._a && h._a.score > max) max = h._a.score; });
+    var list = el('ol', 'list');
+    hits.forEach(function (h) {
+      var s = h._source, li = el('li', 'card');
+      li.appendChild(el('h3', 'ref', reference(s)));
+      var meta = el('div', 'meta');
+      var full = (s.Nom_Juridiction || '').trim();
+      if (s.Code_Juridiction === 'CE') full = "Conseil d'État";
+      meta.appendChild(el('span', null, full));
+      if (s.Type_Decision) meta.appendChild(el('span', null, s.Type_Decision));
+      if (s.Formation_Jugement && s.Code_Juridiction !== 'CE') meta.appendChild(el('span', null, String(s.Formation_Jugement).trim()));
+      if (s.Code_Publication === 'A' || s.Code_Publication === 'B') {
+        var b = el('span', 'badge', s.Code_Publication === 'A' ? 'Recueil Lebon' : 'Tables Lebon');
+        b.title = s.Code_Publication === 'A' ? 'Classée A : publiée au recueil Lebon' : 'Classée B : mentionnée aux tables du recueil Lebon';
+        meta.appendChild(b);
+      }
+      if (h._a && max > 0) {
+        var rel = el('span', 'rel');
+        var lvl = Math.max(1, Math.round(5 * h._a.score / max));
+        var dots = el('span', 'dots');
+        for (var i = 1; i <= 5; i++) dots.appendChild(el('i', i <= lvl ? 'on' : ''));
+        dots.setAttribute('aria-hidden', 'true');
+        rel.appendChild(dots);
+        rel.appendChild(el('span', null, 'pertinence ' + lvl + '/5'));
+        meta.appendChild(rel);
+      }
+      li.appendChild(meta);
+
+      var txt = textCache.get(h._id);
+      if (h._a && txt) {
+        excerptWindows(txt, h._a).forEach(function (w) {
+          var p = el('p', 'ex');
+          if (w[0] > 0) p.appendChild(document.createTextNode('… '));
+          highlightInto(p, txt, h._a.ranges, w[0], w[1]);
+          if (w[1] < txt.length) p.appendChild(document.createTextNode(' …'));
+          li.appendChild(p);
+        });
+        if (h._a.found.length) {
+          var f = h._a.found.slice().sort(function (x, y) { return y.count - x.count; }).map(function (x) { return x.text + ' ×' + x.count; }).join(' · ');
+          li.appendChild(el('div', 'terms', 'Termes trouvés (' + h._a.found.length + '/' + h._a.scored + ') : ' + f));
+        }
+      } else if (h._err) {
+        li.appendChild(el('div', 'terms', 'Texte non récupéré : classement impossible pour cette décision.'));
+      }
+
+      var acts = el('div', 'acts');
+      var read = el('button', 'link', 'Lire la décision');
+      read.type = 'button';
+      read.setAttribute('aria-expanded', 'false');
+      var fullBox = null;
+      read.addEventListener('click', async function () {
+        if (fullBox) { fullBox.remove(); fullBox = null; read.textContent = 'Lire la décision'; read.setAttribute('aria-expanded', 'false'); return; }
+        read.disabled = true; read.textContent = 'Chargement…';
+        try {
+          var t = await fetchText(h, null);
+          var a = analyse(t, current.terms);
+          fullBox = el('div', 'full');
+          var pos = 0;
+          t.split('\n').forEach(function (par) {
+            var from = pos, to = pos + par.length;
+            pos = to + 1;
+            if (!par.trim()) return;
+            var p = el('p');
+            highlightInto(p, t, a.ranges, from, to);
+            fullBox.appendChild(p);
+          });
+          if (!fullBox.childNodes.length) fullBox.appendChild(el('p', null, 'Texte indisponible. Ouvrez la page officielle.'));
+          li.appendChild(fullBox);
+          read.textContent = 'Replier';
+          read.setAttribute('aria-expanded', 'true');
+        } catch (e) {
+          read.textContent = 'Lire la décision';
+          alert('Le texte de cette décision n\'a pas pu être chargé. Essayez la page officielle.');
+        }
+        read.disabled = false;
+      });
+      acts.appendChild(read);
+      var a = el('a', null, 'Page officielle');
+      a.href = SHARE + encodeURIComponent(s.Code_Juridiction) + '/' + encodeURIComponent(String(s.Identification || '').replace(/\.xml$/, ''));
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+      acts.appendChild(a);
+      var cp = el('button', 'link', 'Copier la référence');
+      cp.type = 'button';
+      cp.addEventListener('click', function () { copyText(reference(s), cp); });
+      acts.appendChild(cp);
+      li.appendChild(acts);
+      list.appendChild(li);
+    });
+    out.appendChild(list);
+  }
+
+  // --- Recherche ------------------------------------------------------------
+  async function search() {
+    var terms = collectTerms();
+    var q = queryString(terms);
+    setMsg('', '');
+    if (!terms.some(function (t) { return t.role === 'must'; })) {
+      setMsg('warn', 'Indiquez au moins un terme obligatoire : un mot-clé, ou un terme extrait du texte libre placé en « obligatoire ».');
+      return;
+    }
+    var courts = selectedCourts();
+    if (courts && !courts.length) { setMsg('warn', 'Cochez au moins un type de juridiction.'); return; }
+    var d1 = $('d1').value, d2 = $('d2').value;
+    if (d1 && d2 && d1 > d2) { setMsg('warn', 'La date de début est postérieure à la date de fin.'); return; }
+    var n = parseInt($('nb').value, 10) || 50;
+
+    if (controller) controller.abort();
+    controller = new AbortController();
+    var signal = controller.signal;
+    var myId = ++current.id;
+    current.hits = []; current.terms = terms; current.total = 0; current.analysed = false;
+    $('out').textContent = '';
+    $('rtitle').textContent = 'Résultats';
+    setStatus('Interrogation de la base…');
+    $('go').disabled = true;
+
+    try {
+      var res = await getJSON(buildPath(q, courts, d1, d2, n), signal);
+      if (myId !== current.id) return;
+      var hits = res.hits || [];
+      current.hits = hits;
+      current.total = (res.total && res.total.value) || hits.length;
+      var tot = current.total.toLocaleString('fr-FR');
+      $('rtitle').textContent = current.total === 0 ? 'Aucune décision' : (current.total === 1 ? '1 décision' : tot + ' décisions');
+      if (!hits.length) {
+        setStatus('');
+        var musts = terms.filter(function (t) { return t.role === 'must'; }).length;
+        setMsg('info', musts > 1
+          ? 'Aucune décision ne contient tous les termes obligatoires. Passez-en un ou deux en « bonus », ou élargissez la période et les juridictions.'
+          : 'Aucune décision ne contient ce terme. Essayez un synonyme ou élargissez la période et les juridictions.');
+        return;
+      }
+      if (current.total > hits.length) {
+        setMsg('info', 'Seules les ' + hits.length + ' décisions les plus récentes sont analysées, sur ' + tot + '. Pour cibler, ajoutez un terme obligatoire ou resserrez la période.');
+      }
+      renderResults();
+
+      var done = 0, failed = 0, i = 0;
+      setStatus('Lecture des décisions pour le classement : 0/' + hits.length, 0, hits.length);
+      async function worker() {
+        while (i < hits.length) {
+          var h = hits[i++];
+          try {
+            var t = await fetchText(h, signal);
+            h._a = analyse(t, terms);
+          } catch (e) {
+            if (signal.aborted) return;
+            h._err = true; failed++;
+          }
+          done++;
+          if (myId === current.id) setStatus('Lecture des décisions pour le classement : ' + done + '/' + hits.length, done, hits.length);
+        }
+      }
+      await Promise.all([worker(), worker(), worker()]);
+      if (myId !== current.id || signal.aborted) return;
+      current.analysed = true;
+      setStatus(failed ? ('Classement terminé. ' + failed + ' décision(s) non lue(s).') : 'Classement terminé.');
+      renderResults();
+    } catch (e) {
+      if (signal.aborted || myId !== current.id) return;
+      setStatus('');
+      setMsg('err', 'La base open data n\'a pas répondu. Vérifiez votre connexion ; si le problème persiste, il est possible que votre réseau bloque l\'accès à opendata.justice-administrative.fr depuis cette page.');
+    } finally {
+      if (myId === current.id) $('go').disabled = false;
+    }
+  }
+
+  function resetAll() {
+    if (controller) controller.abort();
+    current = { id: current.id + 1, hits: [], terms: [], total: 0, analysed: false };
+    textCache.clear();
+    freeTerms = [];
+    $('kw').value = ''; $('free').value = ''; $('d1').value = ''; $('d2').value = '';
+    $('lvCE').checked = $('lvCAA').checked = $('lvTA').checked = true;
+    Array.prototype.forEach.call(document.querySelectorAll('#courts input'), function (i) { i.checked = false; });
+    $('nb').value = '50'; $('sort').value = 'rel';
+    renderChips();
+    setStatus(''); setMsg('', '');
+    $('rtitle').textContent = 'Résultats';
+    $('go').disabled = false;
+    $('out').textContent = '';
+    var e = el('div', 'empty');
+    e.appendChild(el('h3', null, 'Tout a été effacé'));
+    e.appendChild(el('p', null, 'Saisissez de nouveaux critères pour lancer une recherche.'));
+    $('out').appendChild(e);
+  }
+
+  // --- Initialisation -------------------------------------------------------
+  (function buildCourts() {
+    var box = $('courts'), grp = '';
+    var names = { CE: 'Conseil d\'État', CAA: 'Cours administratives d\'appel', TA: 'Tribunaux administratifs' };
+    COURTS.forEach(function (c) {
+      if (c[2] !== grp) { grp = c[2]; box.appendChild(el('div', 'grp', names[grp])); }
+      var l = el('label');
+      var i = document.createElement('input');
+      i.type = 'checkbox'; i.value = c[0];
+      l.appendChild(i);
+      l.appendChild(document.createTextNode(' ' + c[1].replace(/^(CAA|TA) /, '')));
+      box.appendChild(l);
+    });
+  })();
+
+  $('extract').addEventListener('click', function () {
+    freeTerms = extractTerms($('free').value);
+    renderChips();
+    if (!freeTerms.length) setMsg('warn', 'Aucun terme exploitable dans le texte libre.'); else setMsg('', '');
+  });
+  $('go').addEventListener('click', search);
+  $('kw').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search(); } });
+  $('reset').addEventListener('click', resetAll);
+  $('sort').addEventListener('change', renderResults);
+})();
+</script>
+</body>
+</html>
