@@ -172,6 +172,10 @@
   .conn .state { font-size: 12.5px; margin: 0; }
   .conn .state.ok { color: var(--accent); font-weight: 600; }
   .conn pre { margin: 0; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow: auto; color: var(--ink-2); }
+  .disp { margin: 9px 0 0; padding: 7px 10px; border-left: 3px solid var(--accent); background: var(--surface-2); font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .disp .tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-bottom: 3px; }
+  .disp .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+  .tag { font-size: 11.5px; font-weight: 600; padding: 0 7px; border-radius: 3px; border: 1px solid var(--ink-3); color: var(--ink); background: var(--surface); }
   .src { font-size: 11px; padding: 0 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
@@ -278,6 +282,8 @@
     <div class="results-head">
       <h2 id="rtitle">Résultats</h2>
       <div class="ctl">
+        <label for="issue">Issue</label>
+        <select id="issue"><option value="">toutes</option></select>
         <label for="sort">Classer par</label>
         <select id="sort">
           <option value="rel">pertinence</option>
@@ -303,7 +309,7 @@
 <footer class="foot">
   <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis aux moteurs de recherche (open data et, si vous l'avez connecté, Légifrance) ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
   <p>Couverture de l'open data : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Pour les décisions plus anciennes, connectez Légifrance, qui couvre surtout le Conseil d'État et les cours administratives d'appel.</p>
-  <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
+  <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Le « dispositif » affiché sous chaque décision est lu automatiquement à la fin du texte : l'étiquette (rejet, annulation…) est indicative et ne dit pas à elle seule qui obtient gain de cause, notamment en appel. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
 </footer>
 
 <script>
@@ -783,6 +789,54 @@
     ranges.sort(function (a, b) { return a[0] - b[0]; });
     return { score: score, found: found, scored: scored, ranges: ranges, roles: terms.map(function (t) { return t.role; }) };
   }
+  // --- Sens de la décision : lecture du dispositif (indicatif) ---------------
+  var ISSUES = [
+    ['Désistement', /desistement/],
+    ['Non-lieu', /(pas|plus) lieu (de|a) statuer|non[- ]lieu a statuer/],
+    ['Annulation', /(est|sont) annulee?s?\b/],
+    ['Suspension', /(est|sont) suspendue?s?\b/],
+    ['Rejet', /(est|sont) rejetee?s?\b|n'est pas admise?\b|ne sont pas admise?s\b/],
+    ['Injonction', /est enjoint/],
+    ['Condamnation', /(est|sont) condamnee?s? a (verser|payer)|versera a |verseront a /],
+    ['Renvoi', /(est|sont) renvoyee?s?\b|est transmise?\b|est attribuee?\b/]
+  ];
+  function dispositif(text) {
+    if (!text) return null;
+    var re = /(?:D\s?[ÉE]\s?C\s?I\s?D\s?E|O\s?R\s?D\s?O\s?N\s?N\s?E)\s*:?/g, m, start = -1;
+    while ((m = re.exec(text))) start = m.index + m[0].length;
+    if (start < 0) {
+      var a1 = /Article\s+1\s?er\s*[:.\-–]/g;
+      while ((m = a1.exec(text))) start = m.index;
+      if (start < 0 || start < text.length * 0.5) return null;
+    }
+    var tail = text.slice(start);
+    var end = tail.search(/\n\s*(Délibéré|Fait à|Rendu public|Lu en (séance|audience)|Ainsi (jugé|délibéré)|La République mande)/);
+    if (end > 0) tail = tail.slice(0, end);
+    var parts = tail.split(/Article\s+(\d+)\s?(?:er)?\s*[:.\-–]?\s*/);
+    var arts = [];
+    for (var i = 1; i + 1 < parts.length; i += 2) {
+      var body = parts[i + 1].replace(/\s+/g, ' ').trim();
+      if (body) arts.push({ n: parts[i], text: body });
+    }
+    if (!arts.length) { var only = tail.replace(/\s+/g, ' ').trim(); if (only) arts.push({ n: '', text: only }); }
+    if (!arts.length) return null;
+    var tags = [], partial = false;
+    arts.forEach(function (a) {
+      var n = norm(a.text);
+      if (/^la presente (decision|ordonnance)|^le present (arret|jugement)/.test(n) && /notifie/.test(n)) return;
+      var frais = /761-1|frais (exposes|non compris|d'instance|de justice)|depens/.test(n);
+      var surplus = /surplus/.test(n);
+      a.side = frais || surplus;
+      if (/(est|sont) annulee?s?\b/.test(n) && /en tant (que|qu'|seulement)/.test(n)) partial = true;
+      if (a.side) return;
+      ISSUES.forEach(function (it) { if (it[1].test(n) && tags.indexOf(it[0]) < 0) tags.push(it[0]); });
+    });
+    var ia = tags.indexOf('Annulation');
+    if (ia >= 0 && partial) tags[ia] = 'Annulation partielle';
+    var shown = arts.filter(function (a) { return !a.side && !(/notifi/.test(norm(a.text)) && !/(annul|rejet|suspend)/.test(norm(a.text))); }).slice(0, 2);
+    return { tags: tags, arts: shown.length ? shown : arts.slice(0, 1) };
+  }
+
   function mergeRanges(ranges) {
     var out = [];
     ranges.forEach(function (r) {
@@ -867,6 +921,18 @@
     box.appendChild(p);
   }
 
+  function fillIssues() {
+    var sel = $('issue'), counts = {}, none = 0;
+    current.hits.forEach(function (h) {
+      if (h._d && h._d.tags.length) h._d.tags.forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+      else none++;
+    });
+    sel.textContent = '';
+    var add = function (v, label) { var o = document.createElement('option'); o.value = v; o.textContent = label; sel.appendChild(o); };
+    add('', 'toutes');
+    Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).forEach(function (k) { add(k, k.toLowerCase() + ' (' + counts[k] + ')'); });
+    if (none && Object.keys(counts).length) add('?', 'non reconnue (' + none + ')');
+  }
   function addMsg(kind, text) {
     var p = el('p', 'note ' + kind, text);
     p.style.marginBottom = '12px';
@@ -877,6 +943,9 @@
     out.textContent = '';
     var hits = current.hits.slice();
     if (!hits.length) return;
+    var issue = $('issue').value;
+    if (issue) hits = hits.filter(function (h) { return issue === '?' ? !(h._d && h._d.tags.length) : (h._d && h._d.tags.indexOf(issue) >= 0); });
+    if (!hits.length) { out.appendChild(el('div', 'empty', 'Aucune décision analysée ne correspond à cette issue.')); return; }
     var mode = $('sort').value;
     var byDate = function (a, b) { return String(b.date).localeCompare(String(a.date)); };
     if (mode === 'rel' && current.analysed) {
@@ -911,6 +980,19 @@
         meta.appendChild(rel);
       }
       li.appendChild(meta);
+      if (h._d) {
+        var dv = el('div', 'disp');
+        var tg = el('div', 'tags');
+        tg.appendChild(el('span', 'lab', 'Dispositif'));
+        if (h._d.tags.length) h._d.tags.forEach(function (t) { tg.appendChild(el('span', 'tag', t)); });
+        else tg.appendChild(el('span', 'lab', '· issue non reconnue'));
+        dv.appendChild(tg);
+        h._d.arts.forEach(function (a) {
+          var tx = a.text.length > 260 ? a.text.slice(0, 260).replace(/\s+\S*$/, '') + ' …' : a.text;
+          dv.appendChild(el('div', null, (a.n ? 'Art. ' + a.n + ' : ' : '') + tx));
+        });
+        li.appendChild(dv);
+      }
 
       var txt = textCache.get(h.id);
       if (h._a && txt) {
@@ -1001,6 +1083,7 @@
     var signal = controller.signal;
     var myId = ++current.id;
     current.hits = []; current.terms = terms; current.total = 0; current.analysed = false;
+    fillIssues();
     $('out').textContent = '';
     $('rtitle').textContent = 'Résultats';
     setStatus('Interrogation ' + (useOD && useLF ? 'des deux bases…' : 'de la base…'));
@@ -1056,6 +1139,7 @@
           try {
             var t = await fetchText(h, signal);
             h._a = analyse(t, terms);
+            h._d = dispositif(t);
           } catch (e) {
             if (signal.aborted) return;
             h._err = true; failed++;
@@ -1067,6 +1151,7 @@
       await Promise.all([worker(), worker(), worker()]);
       if (myId !== current.id || signal.aborted) return;
       current.analysed = true;
+      fillIssues();
       setStatus((failed ? 'Classement terminé. ' + failed + ' décision(s) non lue(s).' : 'Classement terminé.') + (dup ? ' ' + dup + ' doublon(s) entre les deux sources fusionné(s).' : ''));
       renderResults();
     } catch (e) {
@@ -1086,7 +1171,7 @@
     $('kw').value = ''; $('free').value = ''; $('d1').value = ''; $('d2').value = '';
     $('lvCE').checked = $('lvCAA').checked = $('lvTA').checked = true;
     Array.prototype.forEach.call(document.querySelectorAll('#courts input'), function (i) { i.checked = false; });
-    $('nb').value = '50'; $('sort').value = 'rel';
+    $('nb').value = '50'; $('sort').value = 'rel'; fillIssues();
     renderChips();
     setStatus(''); setMsg('', '');
     $('rtitle').textContent = 'Résultats';
@@ -1126,6 +1211,7 @@
   $('lfCopy').addEventListener('click', function () { copyText(diag.join('\n') || 'Aucun essai.', $('lfCopy')); });
   $('lfTok').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lfConnect(); } });
   $('sort').addEventListener('change', renderResults);
+  $('issue').addEventListener('change', renderResults);
 })();
 </script>
 </body>
