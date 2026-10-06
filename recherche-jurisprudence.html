@@ -671,7 +671,7 @@
     var timer = setTimeout(function () { t.abort(); }, 30000);
     var onAbort = function () { t.abort(); };
     if (signal) signal.addEventListener('abort', onAbort);
-    opts.signal = t.signal; opts.cache = 'no-store'; opts.credentials = 'omit'; opts.referrerPolicy = 'no-referrer';
+    opts.signal = t.signal; opts.cache = 'no-store'; opts.credentials = opts.credentials || 'omit'; opts.referrerPolicy = 'no-referrer';
     try { return await fetch(url, opts); }
     finally { clearTimeout(timer); if (signal) signal.removeEventListener('abort', onAbort); }
   }
@@ -685,8 +685,9 @@
     try {
       if (HOSTED) {
         if (!lf.code) throw lfError('creds', 'Code d\'accès manquant.');
+        // Même site que la page : on joint ses cookies, sans quoi un déploiement protégé (aperçu Vercel) refuse l'appel.
         r = await timedFetch(RELAY, {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Code-Acces': lf.code },
           body: JSON.stringify({ path: path, body: payload })
         }, signal);
