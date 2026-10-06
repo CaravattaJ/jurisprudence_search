@@ -10,6 +10,7 @@ Enregistrer `recherche-jurisprudence.html` sur le poste, puis l'ouvrir par doubl
 - **Texte libre** : la page en extrait les termes importants (sans IA). Chaque terme peut être obligatoire, « bonus » (sert seulement au classement) ou ignoré.
 - **Filtres** : niveau de juridiction ou juridictions précises, période.
 - **Résultats** : classement par pertinence, extraits surlignés, texte intégral, lien vers la page officielle, référence à copier.
+- **Sens de la décision** : le dispositif (les articles finaux) est lu automatiquement et résumé par une étiquette (rejet, annulation, suspension…), avec un filtre par issue. L'étiquette est indicative : elle ne dit pas à elle seule qui obtient gain de cause, notamment en appel.
 
 ## Principes
 
