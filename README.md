@@ -4,7 +4,7 @@ Prototype d'outil interne (non officiel) pour retrouver rapidement des décision
 
 ## Utilisation
 
-Enregistrer `recherche-jurisprudence.html` sur le poste, puis l'ouvrir par double-clic dans le navigateur. Aucune installation, aucun serveur.
+Enregistrer `recherche-jurisprudence.html` sur le poste, puis l'ouvrir par double-clic dans le navigateur. Aucune installation, aucun serveur. Une version hébergée est aussi possible (voir plus bas).
 
 - **Mots-clés** : tous obligatoires ; guillemets pour une expression exacte, tiret devant un mot pour l'exclure.
 - **Texte libre** : la page en extrait les termes importants (sans IA). Chaque terme peut être obligatoire, « bonus » (sert seulement au classement) ou ignoré.
@@ -50,8 +50,32 @@ Chaque application PISTE a ses propres identifiants, valables dans un seul envir
 
 Le Client Secret ne doit jamais être écrit dans un fichier de ce dépôt.
 
+## Version hébergée (Vercel)
+
+La page peut aussi être publiée sur Vercel. Elle s'ouvre alors par une adresse web, et l'étape du jeton disparaît : un *relais* (`api/legifrance.js`, une fonction exécutée côté serveur) détient les identifiants PISTE, obtient le jeton et transmet les recherches à Légifrance. L'utilisateur saisit seulement un code d'accès partagé dans le service.
+
+Ce que cela implique :
+
+- les identifiants PISTE sont stockés dans les réglages du projet Vercel, jamais dans ce dépôt ;
+- les recherches Légifrance (termes obligatoires et exclus) transitent par le relais, qui ne les conserve pas ; les recherches open data partent toujours directement du poste ;
+- le relais n'accepte que la recherche et la lecture de décisions du fonds de jurisprudence administrative ;
+- la page n'est pas référencée par les moteurs de recherche, et la fonction s'exécute à Paris (`cdg1`).
+
+**Mise en place**
+
+1. Sur vercel.com : « Add New… » → « Project », puis importer le dépôt `jurisprudence_search`. Préréglage « Other », sans commande de construction.
+2. Dans « Settings » → « Environment Variables », créer :
+   - `PISTE_CLIENT_ID` et `PISTE_CLIENT_SECRET` : identifiants OAuth de l'application PISTE de production ;
+   - `CODE_ACCES` : un code long et difficile à deviner, à communiquer aux collègues ;
+   - `PISTE_ENV` (facultatif) : `sandbox` pour utiliser le bac à sable.
+3. Relancer un déploiement (« Deployments » → « Redeploy ») pour que les variables soient prises en compte.
+4. Ouvrir l'adresse du projet, déplier « Connexion à Légifrance », saisir le code d'accès.
+
+Chaque fusion sur `main` met ensuite la version hébergée à jour. Pour changer le code d'accès, modifier `CODE_ACCES` puis redéployer.
+
+La version fichier (double-clic) continue de fonctionner, avec le jeton à coller.
+
 ## Pistes prévues
 
-- Relais hébergé (par le service informatique) pour obtenir le jeton Légifrance sans manipulation.
 - Recherches prêtes à l'emploi : réglementation du sport, accueils collectifs de mineurs.
 - Dans un second temps : analyse du texte libre par une IA.
