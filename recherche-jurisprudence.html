@@ -176,6 +176,13 @@
   .disp .tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-bottom: 3px; }
   .disp .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
   .tag { font-size: 11.5px; font-weight: 600; padding: 0 7px; border-radius: 3px; border: 1px solid var(--ink-3); color: var(--ink); background: var(--surface); }
+  .arts { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .arts h3 { font: 600 14px var(--sans); margin: 0 0 2px; }
+  .arts .chips { margin-top: 8px; }
+  .arts .chip[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .arts .chip .n { color: var(--ink-3); font-size: 12px; }
+  .arts .opt { font-size: 12.5px; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; }
+  .cited { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
   .src { font-size: 11px; padding: 0 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
@@ -236,7 +243,7 @@
             <pre id="lfDiag">Aucun essai pour l'instant.</pre>
             <button type="button" class="link" id="lfCopy" style="font-size:12.5px">Copier le diagnostic</button>
           </details>
-          <p class="hint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part (voir la notice README), puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
+          <p class="hint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part, en double-cliquant sur le fichier « obtenir-jeton-legifrance.cmd » fourni avec la page, puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
         </div>
       </details>
     </div>
@@ -381,6 +388,8 @@
   var textCache = new Map();    // id de décision -> texte intégral
   var current = { id: 0, hits: [], terms: [], total: 0, analysed: false };
   var controller = null;
+  var artFilter = '';           // article de code servant de filtre
+  var showCJA = false;          // inclure le code de justice administrative dans le panneau
 
   // --- Normalisation (longueur conservée, pour pouvoir surligner) ----------
   function norm(s) {
@@ -745,7 +754,8 @@
       log('essai de recherche : ' + (res.totalResultNumber || 0) + ' résultat(s)');
       lf.ok = true;
       st.className = 'state ok';
-      st.textContent = 'Connecté à Légifrance (' + (lf.env === 'prod' ? 'production' : 'bac à sable') + ').';
+      st.textContent = 'Connecté à Légifrance (' + (lf.env === 'prod' ? 'production' : 'bac à sable') + '). Jeton collé à ' +
+        new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ', valable environ une heure.';
       $('srcLF').disabled = false; $('srcLF').checked = true;
       $('lfOut').hidden = false;
       $('lfTok').value = '';
@@ -837,6 +847,91 @@
     return { tags: tags, arts: shown.length ? shown : arts.slice(0, 1) };
   }
 
+  // --- Articles de codes cités dans une décision ----------------------------
+  var CODES = [
+    ["de l'entree et du sejour des etrangers et du droit d'asile", 'CESEDA', "code de l'entrée et du séjour des étrangers et du droit d'asile"],
+    ["des relations entre le public et l'administration", 'CRPA', "code des relations entre le public et l'administration"],
+    ["general de la propriete des personnes publiques", 'CG3P', 'code général de la propriété des personnes publiques'],
+    ["de l'expropriation pour cause d'utilite publique", "code de l'expropriation", ''],
+    ["des postes et des communications electroniques", 'CPCE', 'code des postes et des communications électroniques'],
+    ["des pensions civiles et militaires de retraite", 'code des pensions', ''],
+    ["de la construction et de l'habitation", 'CCH', "code de la construction et de l'habitation"],
+    ["general des collectivites territoriales", 'CGCT', 'code général des collectivités territoriales'],
+    ["de l'action sociale et des familles", 'CASF', "code de l'action sociale et des familles"],
+    ["de la justice penale des mineurs", 'CJPM', 'code de la justice pénale des mineurs'],
+    ["general de la fonction publique", 'CGFP', 'code général de la fonction publique'],
+    ["rural et de la peche maritime", 'CRPM', 'code rural et de la pêche maritime'],
+    ["de l'organisation judiciaire", "code de l'organisation judiciaire", ''],
+    ["de justice administrative", 'CJA', 'code de justice administrative'],
+    ["de la securite interieure", 'CSI', 'code de la sécurité intérieure'],
+    ["de la commande publique", 'CCP', 'code de la commande publique'],
+    ["de la securite sociale", 'CSS', 'code de la sécurité sociale'],
+    ["monetaire et financier", 'CMF', 'code monétaire et financier'],
+    ["de la sante publique", 'CSP', 'code de la santé publique'],
+    ["de procedure penale", 'CPP', 'code de procédure pénale'],
+    ["de procedure civile", 'CPC', 'code de procédure civile'],
+    ["general des impots", 'CGI', 'code général des impôts'],
+    ["de la consommation", 'code de la consommation', ''],
+    ["de l'environnement", "code de l'environnement", ''],
+    ["de l'urbanisme", "code de l'urbanisme", ''],
+    ["de l'education", "code de l'éducation", ''],
+    ["des transports", 'code des transports', ''],
+    ["de la defense", 'code de la défense', ''],
+    ["du patrimoine", 'code du patrimoine', ''],
+    ["de l'energie", "code de l'énergie", ''],
+    ["de la route", 'code de la route', ''],
+    ["de commerce", 'code de commerce', ''],
+    ["du tourisme", 'code du tourisme', ''],
+    ["du travail", 'code du travail', ''],
+    ["electoral", 'code électoral', ''],
+    ["du sport", 'code du sport', ''],
+    ["penal", 'code pénal', ''],
+    ["civil", 'code civil', '']
+  ];
+  var NUM_SRC = "[lrda]\\.?\\s?\\*?\\s?\\d{1,4}(?:-\\d{1,3}){0,4}";
+  var CITE_RE = new RegExp("articles?\\s+((?:" + NUM_SRC + "(?:\\s*,\\s*|\\s+(?:et|a|ou)\\s+)?)+)(?:\\s*et suivants)?\\s*du\\s+(meme code|code\\s+(?:" +
+    CODES.map(function (c) { return escRe(c[0]); }).join('|') + "))(?![a-z])", 'g');
+  var CODE_RE = new RegExp("code\\s+(" + CODES.map(function (c) { return escRe(c[0]); }).join('|') + ")(?![a-z])", 'g');
+  var NUM_RE = new RegExp("([lrda])\\.?\\s?\\*?\\s?(\\d{1,4}(?:-\\d{1,3}){0,4})", 'g');
+  function citedArticles(text) {
+    var n = norm(text), out = {}, m, mentions = [];
+    var byName = function (name) { for (var i = 0; i < CODES.length; i++) { if (CODES[i][0] === name) return CODES[i]; } return null; };
+    // Toutes les mentions d'un code, pour résoudre « du même code » sur la plus proche qui précède.
+    // Les codes nommés à l'intérieur d'un texte cité entre guillemets ne comptent pas pour une citation située hors guillemets.
+    var quotes = [], open = -1, depth = 0;
+    for (var q = 0; q < n.length; q++) {
+      var ch = n.charAt(q);
+      if (ch === '«') { if (depth++ === 0) open = q; }
+      else if (ch === '»') { if (depth > 0 && --depth === 0) { quotes.push([open, q]); open = -1; } }
+      else if (ch === '"' && depth === 0) { if (open < 0) open = q; else { quotes.push([open, q]); open = -1; } }
+    }
+    var quoteOf = function (pos) { for (var i = 0; i < quotes.length; i++) { if (pos > quotes[i][0] && pos < quotes[i][1]) return i; } return -1; };
+    CODE_RE.lastIndex = 0;
+    while ((m = CODE_RE.exec(n))) mentions.push([m.index, byName(m[1]), quoteOf(m.index)]);
+    CITE_RE.lastIndex = 0;
+    while ((m = CITE_RE.exec(n))) {
+      var code = null;
+      if (m[2] !== 'meme code') code = byName(m[2].replace(/^code\s+/, ''));
+      else {
+        var here = quoteOf(m.index);
+        for (var j = mentions.length - 1; j >= 0; j--) {
+          if (mentions[j][0] < m.index && (mentions[j][2] === -1 || mentions[j][2] === here)) { code = mentions[j][1]; break; }
+        }
+      }
+      if (!code) continue;
+      var k;
+      NUM_RE.lastIndex = 0;
+      while ((k = NUM_RE.exec(m[1]))) {
+        var num = k[1].toUpperCase() + '. ' + k[2];
+        if (code[1] === 'CJA' && num === 'L. 761-1') continue;
+        var key = num + '|' + code[1];
+        if (!out[key]) out[key] = { key: key, label: num + ' ' + code[1], title: code[2] || code[1], cja: code[1] === 'CJA', count: 0 };
+        out[key].count++;
+      }
+    }
+    return out;
+  }
+
   function mergeRanges(ranges) {
     var out = [];
     ranges.forEach(function (r) {
@@ -921,6 +1016,46 @@
     box.appendChild(p);
   }
 
+  function articlesPanel() {
+    var agg = {}, any = false;
+    current.hits.forEach(function (h) {
+      if (!h._c) return;
+      Object.keys(h._c).forEach(function (k) {
+        var a = h._c[k];
+        if (!agg[k]) agg[k] = { key: k, label: a.label, title: a.title, cja: a.cja, docs: 0 };
+        agg[k].docs++;
+      });
+    });
+    var list = Object.keys(agg).map(function (k) { return agg[k]; }).filter(function (a) { return showCJA || !a.cja || a.key === artFilter; })
+      .sort(function (a, b) { return (b.docs - a.docs) || a.label.localeCompare(b.label); }).slice(0, 14);
+    var box = el('section', 'arts');
+    box.setAttribute('aria-label', 'Articles les plus cités');
+    box.appendChild(el('h3', null, 'Articles les plus cités'));
+    box.appendChild(el('p', 'hint', list.length
+      ? 'Nombre de décisions analysées citant chaque article. Cliquez sur un article pour ne garder que ces décisions.'
+      : 'Aucun article de code repéré dans les décisions analysées.'));
+    var chips = el('div', 'chips');
+    list.forEach(function (a) {
+      any = true;
+      var b = el('button', 'chip');
+      b.type = 'button';
+      b.title = a.title;
+      b.setAttribute('aria-pressed', a.key === artFilter ? 'true' : 'false');
+      b.appendChild(el('span', 'w', a.label));
+      b.appendChild(el('span', 'n', '(' + a.docs + ')'));
+      b.addEventListener('click', function () { artFilter = (artFilter === a.key) ? '' : a.key; renderResults(); });
+      chips.appendChild(b);
+    });
+    if (any) box.appendChild(chips);
+    var opt = el('label', 'opt');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = showCJA;
+    cb.addEventListener('change', function () { showCJA = cb.checked; renderResults(); });
+    opt.appendChild(cb);
+    opt.appendChild(document.createTextNode('Inclure le code de justice administrative (procédure)'));
+    box.appendChild(opt);
+    return box;
+  }
   function fillIssues() {
     var sel = $('issue'), counts = {}, none = 0;
     current.hits.forEach(function (h) {
@@ -944,8 +1079,10 @@
     var hits = current.hits.slice();
     if (!hits.length) return;
     var issue = $('issue').value;
+    if (current.analysed) out.appendChild(articlesPanel());
     if (issue) hits = hits.filter(function (h) { return issue === '?' ? !(h._d && h._d.tags.length) : (h._d && h._d.tags.indexOf(issue) >= 0); });
-    if (!hits.length) { out.appendChild(el('div', 'empty', 'Aucune décision analysée ne correspond à cette issue.')); return; }
+    if (artFilter) hits = hits.filter(function (h) { return h._c && h._c[artFilter]; });
+    if (!hits.length) { out.appendChild(el('div', 'empty', 'Aucune décision analysée ne correspond à ces filtres.')); return; }
     var mode = $('sort').value;
     var byDate = function (a, b) { return String(b.date).localeCompare(String(a.date)); };
     if (mode === 'rel' && current.analysed) {
@@ -980,6 +1117,11 @@
         meta.appendChild(rel);
       }
       li.appendChild(meta);
+      if (h._c) {
+        var cl = Object.keys(h._c).map(function (k) { return h._c[k]; }).filter(function (a) { return !a.cja; })
+          .sort(function (a, b) { return b.count - a.count; }).slice(0, 6).map(function (a) { return a.label; });
+        if (cl.length) li.appendChild(el('div', 'cited', 'Articles cités : ' + cl.join(' · ')));
+      }
       if (h._d) {
         var dv = el('div', 'disp');
         var tg = el('div', 'tags');
@@ -1083,6 +1225,7 @@
     var signal = controller.signal;
     var myId = ++current.id;
     current.hits = []; current.terms = terms; current.total = 0; current.analysed = false;
+    artFilter = '';
     fillIssues();
     $('out').textContent = '';
     $('rtitle').textContent = 'Résultats';
@@ -1140,6 +1283,7 @@
             var t = await fetchText(h, signal);
             h._a = analyse(t, terms);
             h._d = dispositif(t);
+            h._c = citedArticles(t);
           } catch (e) {
             if (signal.aborted) return;
             h._err = true; failed++;
@@ -1171,7 +1315,7 @@
     $('kw').value = ''; $('free').value = ''; $('d1').value = ''; $('d2').value = '';
     $('lvCE').checked = $('lvCAA').checked = $('lvTA').checked = true;
     Array.prototype.forEach.call(document.querySelectorAll('#courts input'), function (i) { i.checked = false; });
-    $('nb').value = '50'; $('sort').value = 'rel'; fillIssues();
+    $('nb').value = '50'; $('sort').value = 'rel'; artFilter = ''; showCJA = false; fillIssues();
     renderChips();
     setStatus(''); setMsg('', '');
     $('rtitle').textContent = 'Résultats';
