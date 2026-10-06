@@ -10,6 +10,7 @@ Enregistrer `recherche-jurisprudence.html` sur le poste, puis l'ouvrir par doubl
 - **Texte libre** : la page en extrait les termes importants (sans IA). Chaque terme peut être obligatoire, « bonus » (sert seulement au classement) ou ignoré.
 - **Filtres** : niveau de juridiction ou juridictions précises, période.
 - **Résultats** : classement par pertinence, extraits surlignés, texte intégral, lien vers la page officielle, référence à copier.
+- **Articles cités** : les articles de codes cités dans les décisions analysées sont repérés (par exemple L. 227-4 CASF). Un panneau liste les plus fréquents et permet de filtrer les résultats sur un article. Repérage automatique : une attribution erronée à un code reste possible lorsque la décision écrit « du même code ».
 - **Sens de la décision** : le dispositif (les articles finaux) est lu automatiquement et résumé par une étiquette (rejet, annulation, suspension…), avec un filtre par issue. L'étiquette est indicative : elle ne dit pas à elle seule qui obtient gain de cause, notamment en appel.
 
 ## Principes
@@ -37,14 +38,15 @@ Prérequis : un compte sur piste.gouv.fr et une application abonnée à l'API L�
 
 **Pourquoi un jeton à coller.** L'accès se fait en deux temps : PISTE délivre un *jeton* (laissez-passer valable environ une heure) en échange du Client ID et du Client Secret, puis ce jeton accompagne chaque recherche. Or le serveur qui délivre le jeton refuse tout appel venant d'une page web (constaté le 6 octobre 2026). La page ne peut donc pas le demander elle-même : il s'obtient à part, puis se colle dans « Connexion à Légifrance (PISTE) ».
 
-**Obtenir un jeton sous Windows.** Ouvrir PowerShell et coller ces deux lignes (production) :
+**Obtenir un jeton sous Windows.** Double-cliquer sur `obtenir-jeton-legifrance.cmd` (à enregistrer à côté de la page). Une fenêtre demande l'environnement, le Client ID puis le Client Secret (saisie masquée), et place le jeton dans le presse-papiers. Rien n'est enregistré.
+
+Si le fichier est bloqué sur le poste, la même opération se fait en collant cette ligne dans PowerShell (production ; pour le bac à sable, l'adresse commence par `https://sandbox-oauth.piste.gouv.fr`) :
 
 ```powershell
-$r = Invoke-RestMethod -Method Post -Uri "https://oauth.piste.gouv.fr/api/oauth/token" -Body @{ grant_type = "client_credentials"; client_id = (Read-Host "Client ID"); client_secret = (Read-Host "Client Secret"); scope = "openid" }
-$r.access_token | Set-Clipboard
+$id = Read-Host "Client ID"; $sec = Read-Host "Client Secret"; $r = Invoke-RestMethod -Method Post -Uri "https://oauth.piste.gouv.fr/api/oauth/token" -Body @{ grant_type = "client_credentials"; client_id = $id; client_secret = $sec; scope = "openid" }; if ($r.access_token) { $r.access_token | Set-Clipboard; "OK : jeton copie" } else { "Aucun jeton recu" }; $sec = $null
 ```
 
-PowerShell demande le Client ID puis le Client Secret, et place le jeton dans le presse-papiers. Pour le bac à sable, remplacer l'adresse par `https://sandbox-oauth.piste.gouv.fr/api/oauth/token` et choisir « Bac à sable » dans la page.
+Chaque application PISTE a ses propres identifiants, valables dans un seul environnement : ceux de `APP_SANDBOX` ne fonctionnent que sur le bac à sable.
 
 Le Client Secret ne doit jamais être écrit dans un fichier de ce dépôt.
 
