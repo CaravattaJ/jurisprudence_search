@@ -167,6 +167,12 @@
   .full p { margin: 0 0 .7em; }
   footer.foot { max-width: 1240px; margin: 0 auto; padding: 0 24px 32px; font-size: 12.5px; color: var(--ink-3); }
   @media (max-width: 860px) { footer.foot { padding: 0 16px 24px; } }
+  .conn { margin-top: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); display: grid; gap: 8px; }
+  .conn label { font-size: 12.5px; color: var(--ink-2); display: grid; gap: 3px; }
+  .conn .state { font-size: 12.5px; margin: 0; }
+  .conn .state.ok { color: var(--accent); font-weight: 600; }
+  .conn pre { margin: 0; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow: auto; color: var(--ink-2); }
+  .src { font-size: 11px; padding: 0 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
@@ -175,7 +181,7 @@
   <div class="wrap">
     <p class="eyebrow">Prototype de test · outil interne non officiel</p>
     <h1>Recherche de jurisprudence administrative</h1>
-    <p class="sub">Conseil d'État, cours administratives d'appel et tribunaux administratifs. Les décisions proviennent en direct de l'open data de la justice administrative.</p>
+    <p class="sub">Conseil d'État, cours administratives d'appel et tribunaux administratifs. Les décisions proviennent en direct de l'open data de la justice administrative et, après connexion, de Légifrance.</p>
   </div>
 </header>
 
@@ -196,6 +202,39 @@
       </div>
       <div id="chips" class="chips" aria-live="polite"></div>
       <p id="legend" class="legend" hidden>Cliquez sur un terme pour changer son rôle : <b>obligatoire</b> (doit figurer dans la décision), <b>bonus</b> (sert seulement au classement), <b>ignoré</b>.</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Sources</span>
+      <div class="checks">
+        <label><input type="checkbox" id="srcOD" checked> Open data (depuis 2021-2022)</label>
+        <label><input type="checkbox" id="srcLF" disabled> Légifrance (fonds historique)</label>
+      </div>
+      <details class="more" id="lfBox">
+        <summary>Connexion à Légifrance (PISTE)</summary>
+        <div class="conn">
+          <label>Environnement
+            <select id="lfEnv">
+              <option value="prod">Production (données réelles)</option>
+              <option value="sandbox">Bac à sable (données de test)</option>
+            </select>
+          </label>
+          <label>Jeton d'accès (valable environ une heure)
+            <input type="password" id="lfTok" autocomplete="off" spellcheck="false" style="width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px">
+          </label>
+          <div class="row">
+            <button type="button" id="lfConnect">Se connecter</button>
+            <button type="button" id="lfOut" hidden>Se déconnecter</button>
+          </div>
+          <p id="lfState" class="state" role="status" aria-live="polite">Non connecté.</p>
+          <details>
+            <summary style="font-size:12.5px;cursor:pointer;color:var(--ink-3)">Diagnostic technique</summary>
+            <pre id="lfDiag">Aucun essai pour l'instant.</pre>
+            <button type="button" class="link" id="lfCopy" style="font-size:12.5px">Copier le diagnostic</button>
+          </details>
+          <p class="hint" style="margin:0">Le serveur de connexion de PISTE refuse les appels venant d'une page web : le jeton s'obtient à part (voir la notice README), puis se colle ici. Il reste en mémoire le temps de la session, sans être enregistré.</p>
+        </div>
+      </details>
     </div>
 
     <div class="field">
@@ -262,9 +301,9 @@
 </main>
 
 <footer class="foot">
-  <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis au moteur de recherche de l'open data ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
-  <p>Couverture de la base : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Les décisions plus anciennes n'y figurent presque pas.</p>
-  <p>Limite à connaître : le moteur public renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
+  <p>Cette page n'enregistre rien : ni fichier, ni cookie, ni historique. Tout disparaît à la fermeture de l'onglet. Seuls les termes obligatoires et exclus sont transmis aux moteurs de recherche (open data et, si vous l'avez connecté, Légifrance) ; le texte libre et les termes « bonus » restent sur votre poste. Ne saisissez aucun nom ni élément permettant d'identifier une personne.</p>
+  <p>Couverture de l'open data : Conseil d'État depuis fin septembre 2021, cours administratives d'appel depuis fin mars 2022, tribunaux administratifs depuis fin juin 2022. Pour les décisions plus anciennes, connectez Légifrance, qui couvre surtout le Conseil d'État et les cours administratives d'appel.</p>
+  <p>Limite à connaître : l'open data renvoie les décisions les plus récentes qui contiennent vos termes, et non les plus pertinentes. Le classement par pertinence ne porte donc que sur les décisions analysées. Si le total est élevé, ajoutez un terme obligatoire ou resserrez la période. Vérifiez toujours une décision sur sa page officielle avant de la citer.</p>
 </footer>
 
 <script>
@@ -273,6 +312,16 @@
 
   var API = 'https://opendata.justice-administrative.fr/recherche/api/';
   var SHARE = 'https://opendata.justice-administrative.fr/recherche/shareFile/';
+
+  // API Légifrance via le portail PISTE. Le serveur de jetons de PISTE rejette toute requête portant un en-tête
+  // Origin (donc tout appel depuis un navigateur) : le jeton est obtenu hors de la page puis collé par l'utilisateur.
+  var PISTE = {
+    prod: { oauth: 'https://oauth.piste.gouv.fr/api/oauth/token', api: 'https://api.piste.gouv.fr/dila/legifrance/lf-engine-app' },
+    sandbox: { oauth: 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token', api: 'https://sandbox-api.piste.gouv.fr/dila/legifrance/lf-engine-app' }
+  };
+  var LF_PAGE = 'https://www.legifrance.gouv.fr/ceta/id/';
+  var lf = { env: 'prod', token: '', ok: false };
+  var diag = [];
 
   // Juridictions présentes dans la base (relevé du 6 octobre 2026).
   var COURTS = [
@@ -480,15 +529,235 @@
     }
     throw lastErr;
   }
-  async function fetchText(hit, signal) {
-    if (textCache.has(hit._id)) return textCache.get(hit._id);
-    var s = hit._source;
+  // --- Résultats ramenés à une forme commune --------------------------------
+  function hitKey(h) {
+    var n = String(h.num || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    return n && h.date ? n + '|' + h.date : '';
+  }
+  function odHit(h) {
+    var s = h._source, code = String(s.Code_Juridiction || '');
     var idXml = String(s.Identification || '').replace(/\.xml$/, '');
-    var res = await getJSON('testView/openData/unHighlight/' + enc(idXml) + '/' + enc(s.Code_Juridiction) + '/' + enc(s.Numero_Dossier), signal);
-    var txt = (res.hits && res.hits[0] && res.hits[0]._source && res.hits[0]._source.paragraph) || '';
-    txt = txt.replace(/\$\$\$/g, '\n');
-    textCache.set(hit._id, txt);
+    var isCE = code === 'CE';
+    var short = isCE ? 'CE' : (COURT_NAME[code] || String(s.Nom_Juridiction || '').trim() || code);
+    var parts = [short];
+    if (isCE && s.Formation_Jugement) parts.push(String(s.Formation_Jugement).trim().toLowerCase());
+    parts.push(frDate(s.Date_Lecture));
+    parts.push('n° ' + s.Numero_Dossier);
+    return {
+      id: h._id, src: 'od', level: isCE ? 'CE' : (code.indexOf('CAA') === 0 ? 'CAA' : 'TA'), short: short,
+      courtFull: isCE ? "Conseil d'État" : String(s.Nom_Juridiction || '').trim(),
+      ref: parts.join(', '), date: String(s.Date_Lecture || ''), num: String(s.Numero_Dossier || ''),
+      type: s.Type_Decision || '', formation: isCE ? '' : String(s.Formation_Jugement || '').trim(),
+      pub: (s.Code_Publication === 'A' || s.Code_Publication === 'B') ? s.Code_Publication : '',
+      url: SHARE + encodeURIComponent(code) + '/' + encodeURIComponent(idXml), code: code, idXml: idXml
+    };
+  }
+  function titleCase(s) {
+    return s.toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); })
+      .replace(/(^|[\s\-])(De|Du|Des|La|Le|Les|En|Sur|D')(?=[\s\-'A-Z])/g, function (m, a, b) { return a + b.toLowerCase(); });
+  }
+  function shortCourt(c) {
+    var s = c.replace(/^cour administrative d'appel\s+(de\s+|d')/i, 'CAA ').replace(/^CAA\s+(de\s+|d')/i, 'CAA ')
+      .replace(/^tribunal administratif\s+(de\s+|d')/i, 'TA ').replace(/^TA\s+(de\s+|d')/i, 'TA ');
+    var m = /^(CAA|TA) (.+)$/.exec(s);
+    if (m && m[2] === m[2].toUpperCase()) s = m[1] + ' ' + titleCase(m[2]);
+    return s;
+  }
+  function lfHit(r) {
+    var t = (r.titles && r.titles[0]) || {};
+    var id = String(t.id || r.id || '');
+    var title = String(t.title || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    var parts = title.split(/,\s+/), di = -1;
+    for (var i = 0; i < parts.length; i++) { if (/^\d{2}\/\d{2}\/\d{4}$/.test(parts[i])) { di = i; break; } }
+    var date = '';
+    if (di >= 0) { var d = parts[di].split('/'); date = d[2] + '-' + d[1] + '-' + d[0]; }
+    else {
+      for (i = 0; i < parts.length; i++) {
+        var lm = /^(?:du\s+)?(\d{1,2})(?:er)?\s+([a-zéûô]+)\s+(\d{4})$/i.exec(parts[i]);
+        var mi = lm ? MONTHS.indexOf(lm[2].toLowerCase()) : -1;
+        if (mi >= 0) { di = i; date = lm[3] + '-' + ('0' + (mi + 1)).slice(-2) + '-' + ('0' + lm[1]).slice(-2); break; }
+      }
+    }
+    if (di < 0 && /^\d{4}-\d{2}-\d{2}/.test(String(r.date || ''))) date = String(r.date).slice(0, 10);
+    var court = parts[0] || '';
+    var formation = di > 1 ? parts.slice(1, di).join(', ') : '';
+    var num = (di >= 0 && parts[di + 1]) ? parts[di + 1] : String(r.num || '');
+    var level = /conseil d.?[ée]tat/i.test(court) ? 'CE' : (/^CAA|cour administrative/i.test(court) ? 'CAA' : (/^TA\b|tribunal administratif/i.test(court) ? 'TA' : 'AUTRE'));
+    var short = level === 'CE' ? 'CE' : shortCourt(court);
+    var ref = title;
+    if (di >= 0) {
+      var rp = [short];
+      if (level === 'CE' && formation) rp.push(formation.toLowerCase());
+      rp.push(frDate(date));
+      if (num) rp.push('n° ' + num);
+      ref = rp.join(', ');
+    }
+    return {
+      id: id, src: 'lf', level: level, short: short, courtFull: level === 'CE' ? "Conseil d'État" : court,
+      ref: ref || id, date: date, num: num, type: '', formation: level === 'CE' ? '' : formation,
+      pub: /publi[ée]e? au recueil/i.test(title) ? 'A' : (/mentionn[ée]e?.{0,12}tables/i.test(title) ? 'B' : ''),
+      url: LF_PAGE + encodeURIComponent(id)
+    };
+  }
+  function courtSelection() {
+    var picked = Array.prototype.slice.call(document.querySelectorAll('#courts input:checked')).map(function (i) { return i.value; });
+    if (picked.length) return { precise: picked.map(function (c) { return c === 'CE' ? 'ce' : norm(COURT_NAME[c]); }) };
+    var lv = { CE: $('lvCE').checked, CAA: $('lvCAA').checked, TA: $('lvTA').checked };
+    if (lv.CE && lv.CAA && lv.TA) return null;
+    return { levels: lv };
+  }
+  function lfAllowed(h, sel) {
+    if (!sel) return true;
+    if (sel.levels) return !!sel.levels[h.level];
+    return sel.precise.indexOf(norm(h.short)) >= 0;
+  }
+
+  // --- Légifrance (PISTE) ---------------------------------------------------
+  function log(line) {
+    diag.push(new Date().toLocaleTimeString('fr-FR') + '  ' + line);
+    if (diag.length > 40) diag.shift();
+    $('lfDiag').textContent = diag.join('\n');
+  }
+  async function timedFetch(url, opts, signal) {
+    var t = new AbortController();
+    var timer = setTimeout(function () { t.abort(); }, 30000);
+    var onAbort = function () { t.abort(); };
+    if (signal) signal.addEventListener('abort', onAbort);
+    opts.signal = t.signal; opts.cache = 'no-store'; opts.credentials = 'omit'; opts.referrerPolicy = 'no-referrer';
+    try { return await fetch(url, opts); }
+    finally { clearTimeout(timer); if (signal) signal.removeEventListener('abort', onAbort); }
+  }
+  function lfError(kind, message) { var e = new Error(message); e.kind = kind; return e; }
+  function lfToken() {
+    if (!lf.token) throw lfError('creds', 'Jeton manquant.');
+    return lf.token;
+  }
+  async function lfPost(path, payload, signal) {
+    var token = lfToken(), r;
+    try {
+      r = await timedFetch(PISTE[lf.env].api + path, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      }, signal);
+    } catch (e) {
+      if (signal && signal.aborted) throw e;
+      log(path + ' [' + lf.env + '] : aucune réponse lisible (' + (e && e.name) + ' : ' + (e && e.message) + ')');
+      throw lfError('network', 'Le navigateur n\'a pas pu lire la réponse de Légifrance.');
+    }
+    if (!r.ok) {
+      var detail = '';
+      try { detail = (await r.text()).slice(0, 200); } catch (e2) { /* rien */ }
+      log(path + ' [' + lf.env + '] : HTTP ' + r.status + (detail ? ' — ' + detail : ''));
+      if (r.status === 401) throw lfError('creds', 'Jeton refusé ou expiré : obtenez-en un nouveau.');
+      throw lfError(r.status === 403 ? 'forbidden' : 'http', 'Légifrance a répondu HTTP ' + r.status + '.');
+    }
+    return await r.json();
+  }
+  function lfCriteria(terms) {
+    return terms.filter(function (t) { return t.role === 'must' || t.role === 'not'; }).map(function (t) {
+      var phrase = /\s/.test(t.text);
+      var type = t.role === 'must'
+        ? (phrase ? 'EXACTE' : 'TOUS_LES_MOTS_DANS_UN_CHAMP')
+        : (phrase ? 'AUCUNE_CORRESPONDANCE_A_CETTE_EXPRESSION' : 'AUCUN_DES_MOTS');
+      return { typeRecherche: type, valeur: t.text, operateur: 'ET' };
+    });
+  }
+  function lfBody(criteres, n, dates) {
+    var filtres = [];
+    if (dates) filtres.push({ facette: 'DATE_DECISION', dates: { start: dates[0], end: dates[1] } });
+    return {
+      fond: 'CETAT',
+      recherche: {
+        champs: [{ typeChamp: 'ALL', operateur: 'ET', criteres: criteres }],
+        filtres: filtres, pageNumber: 1, pageSize: n, operateur: 'ET',
+        sort: 'PERTINENCE', typePagination: 'DEFAUT'
+      }
+    };
+  }
+  async function lfSearch(terms, d1, d2, n, sel, signal) {
+    var criteres = lfCriteria(terms);
+    var dates = (d1 || d2) ? [d1 || '1900-01-01', d2 || new Date().toISOString().slice(0, 10)] : null;
+    var res, localDates = false;
+    try {
+      res = await lfPost('/search', lfBody(criteres, n, dates), signal);
+    } catch (e) {
+      if (!dates || e.kind !== 'http') throw e;
+      log('/search : nouvel essai sans filtre de date (filtrage fait par la page)');
+      res = await lfPost('/search', lfBody(criteres, n, null), signal);
+      localDates = true;
+    }
+    var raw = res.results || [];
+    log('/search : ' + (res.totalResultNumber || 0) + ' résultat(s), ' + raw.length + ' reçu(s)' +
+      (raw[0] ? ' ; champs : ' + Object.keys(raw[0]).filter(function (k) { return raw[0][k] != null && raw[0][k] !== '' && !(Array.isArray(raw[0][k]) && !raw[0][k].length); }).join(',') : '') +
+      (res.facets && res.facets.length ? ' ; facettes : ' + res.facets.map(function (f) { return f.facetElem || f.field; }).join(',') : ''));
+    var hits = raw.map(lfHit).filter(function (h) { return h.id && lfAllowed(h, sel); });
+    if (localDates) hits = hits.filter(function (h) { return !h.date || (h.date >= dates[0] && h.date <= dates[1]); });
+    return { hits: hits, total: res.totalResultNumber || hits.length };
+  }
+  function htmlToText(html) {
+    var withBreaks = String(html).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n');
+    var doc = new DOMParser().parseFromString(withBreaks, 'text/html');
+    return (doc.body.textContent || '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  async function lfText(h, signal) {
+    var d = await lfPost('/consult/juri', { textId: h.id }, signal);
+    var t = (d && d.text) || {};
+    var txt = t.texte || '';
+    if (!txt && t.texteHtml) txt = htmlToText(t.texteHtml);
+    else if (/<[a-z][^>]*>/i.test(txt)) txt = htmlToText(txt);
     return txt;
+  }
+  async function odSearch(q, courts, d1, d2, n, signal) {
+    var res = await getJSON(buildPath(q, courts, d1, d2, n), signal);
+    var hits = (res.hits || []).map(odHit);
+    return { hits: hits, total: (res.total && res.total.value) || hits.length };
+  }
+  async function odText(h, signal) {
+    var res = await getJSON('testView/openData/unHighlight/' + enc(h.idXml) + '/' + enc(h.code) + '/' + enc(h.num), signal);
+    var txt = (res.hits && res.hits[0] && res.hits[0]._source && res.hits[0]._source.paragraph) || '';
+    return txt.replace(/\$\$\$/g, '\n');
+  }
+  async function fetchText(h, signal) {
+    if (textCache.has(h.id)) return textCache.get(h.id);
+    var txt = h.src === 'lf' ? await lfText(h, signal) : await odText(h, signal);
+    textCache.set(h.id, txt);
+    return txt;
+  }
+
+  async function lfConnect() {
+    lf.env = $('lfEnv').value;
+    lf.token = $('lfTok').value.trim().replace(/^Bearer\s+/i, '').replace(/^"|"$/g, '');
+    lf.ok = false;
+    var st = $('lfState');
+    st.className = 'state';
+    if (!lf.token) { st.textContent = 'Collez d\'abord le jeton d\'accès.'; return; }
+    $('lfConnect').disabled = true;
+    st.textContent = 'Vérification en cours…';
+    try {
+      var res = await lfPost('/search', lfBody([{ typeRecherche: 'TOUS_LES_MOTS_DANS_UN_CHAMP', valeur: 'décret', operateur: 'ET' }], 1, null), null);
+      log('essai de recherche : ' + (res.totalResultNumber || 0) + ' résultat(s)');
+      lf.ok = true;
+      st.className = 'state ok';
+      st.textContent = 'Connecté à Légifrance (' + (lf.env === 'prod' ? 'production' : 'bac à sable') + ').';
+      $('srcLF').disabled = false; $('srcLF').checked = true;
+      $('lfOut').hidden = false;
+      $('lfTok').value = '';
+    } catch (e) {
+      st.textContent = e.kind === 'creds' ? 'Jeton refusé ou expiré. Vérifiez qu\'il correspond à l\'environnement choisi, ou obtenez-en un nouveau.'
+        : e.kind === 'network' ? 'Légifrance est injoignable depuis cette page : votre réseau bloque peut-être l\'accès. Copiez le diagnostic ci-dessous.'
+        : e.kind === 'forbidden' ? 'Jeton accepté mais accès à Légifrance refusé : vérifiez que l\'API Légifrance est cochée dans cette application PISTE.'
+        : (e.message || 'Échec de la connexion.') + ' Copiez le diagnostic ci-dessous.';
+      $('srcLF').checked = false; $('srcLF').disabled = true;
+    }
+    $('lfConnect').disabled = false;
+  }
+  function lfDisconnect() {
+    lf.token = ''; lf.ok = false;
+    $('lfTok').value = '';
+    $('srcLF').checked = false; $('srcLF').disabled = true;
+    $('lfOut').hidden = true;
+    $('lfState').className = 'state'; $('lfState').textContent = 'Non connecté.';
   }
 
   // --- Analyse locale d'une décision ---------------------------------------
@@ -567,15 +836,6 @@
     var d = parseInt(m[3], 10);
     return (d === 1 ? '1er' : d) + ' ' + MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1];
   }
-  function reference(s) {
-    var court = COURT_NAME[s.Code_Juridiction] || (s.Nom_Juridiction || '').trim() || s.Code_Juridiction;
-    if (s.Code_Juridiction === 'CE') court = 'CE';
-    var parts = [court];
-    if (s.Formation_Jugement && s.Code_Juridiction === 'CE') parts.push(String(s.Formation_Jugement).trim().toLowerCase());
-    parts.push(frDate(s.Date_Lecture));
-    parts.push('n° ' + s.Numero_Dossier);
-    return parts.join(', ');
-  }
   function copyText(txt, btn) {
     var done = function () { var o = btn.textContent; btn.textContent = 'Copié'; setTimeout(function () { btn.textContent = o; }, 1400); };
     var fallback = function () {
@@ -607,34 +867,39 @@
     box.appendChild(p);
   }
 
+  function addMsg(kind, text) {
+    var p = el('p', 'note ' + kind, text);
+    p.style.marginBottom = '12px';
+    $('msg').appendChild(p);
+  }
   function renderResults() {
     var out = $('out');
     out.textContent = '';
     var hits = current.hits.slice();
     if (!hits.length) return;
     var mode = $('sort').value;
+    var byDate = function (a, b) { return String(b.date).localeCompare(String(a.date)); };
     if (mode === 'rel' && current.analysed) {
-      hits.sort(function (a, b) { return ((b._a ? b._a.score : -1) - (a._a ? a._a.score : -1)) || String(b._source.Date_Lecture).localeCompare(String(a._source.Date_Lecture)); });
-    } else {
-      hits.sort(function (a, b) { return String(b._source.Date_Lecture).localeCompare(String(a._source.Date_Lecture)); });
+      hits.sort(function (a, b) { return ((b._a ? b._a.score : -1) - (a._a ? a._a.score : -1)) || byDate(a, b); });
+    } else if (mode === 'date') {
+      hits.sort(byDate);
     }
     var max = 0;
     hits.forEach(function (h) { if (h._a && h._a.score > max) max = h._a.score; });
     var list = el('ol', 'list');
     hits.forEach(function (h) {
-      var s = h._source, li = el('li', 'card');
-      li.appendChild(el('h3', 'ref', reference(s)));
+      var li = el('li', 'card');
+      li.appendChild(el('h3', 'ref', h.ref));
       var meta = el('div', 'meta');
-      var full = (s.Nom_Juridiction || '').trim();
-      if (s.Code_Juridiction === 'CE') full = "Conseil d'État";
-      meta.appendChild(el('span', null, full));
-      if (s.Type_Decision) meta.appendChild(el('span', null, s.Type_Decision));
-      if (s.Formation_Jugement && s.Code_Juridiction !== 'CE') meta.appendChild(el('span', null, String(s.Formation_Jugement).trim()));
-      if (s.Code_Publication === 'A' || s.Code_Publication === 'B') {
-        var b = el('span', 'badge', s.Code_Publication === 'A' ? 'Recueil Lebon' : 'Tables Lebon');
-        b.title = s.Code_Publication === 'A' ? 'Classée A : publiée au recueil Lebon' : 'Classée B : mentionnée aux tables du recueil Lebon';
+      if (h.courtFull) meta.appendChild(el('span', null, h.courtFull));
+      if (h.type) meta.appendChild(el('span', null, h.type));
+      if (h.formation) meta.appendChild(el('span', null, h.formation));
+      if (h.pub) {
+        var b = el('span', 'badge', h.pub === 'A' ? 'Recueil Lebon' : 'Tables Lebon');
+        b.title = h.pub === 'A' ? 'Publiée au recueil Lebon' : 'Mentionnée aux tables du recueil Lebon';
         meta.appendChild(b);
       }
+      meta.appendChild(el('span', 'src', h.src === 'lf' ? 'Légifrance' : (h.alsoLf ? 'open data + Légifrance' : 'open data')));
       if (h._a && max > 0) {
         var rel = el('span', 'rel');
         var lvl = Math.max(1, Math.round(5 * h._a.score / max));
@@ -647,7 +912,7 @@
       }
       li.appendChild(meta);
 
-      var txt = textCache.get(h._id);
+      var txt = textCache.get(h.id);
       if (h._a && txt) {
         excerptWindows(txt, h._a).forEach(function (w) {
           var p = el('p', 'ex');
@@ -696,13 +961,16 @@
         read.disabled = false;
       });
       acts.appendChild(read);
-      var a = el('a', null, 'Page officielle');
-      a.href = SHARE + encodeURIComponent(s.Code_Juridiction) + '/' + encodeURIComponent(String(s.Identification || '').replace(/\.xml$/, ''));
-      a.target = '_blank'; a.rel = 'noopener noreferrer';
-      acts.appendChild(a);
+      var link = function (label, url) {
+        var a = el('a', null, label);
+        a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        acts.appendChild(a);
+      };
+      link(h.src === 'lf' ? 'Page Légifrance' : 'Page officielle', h.url);
+      if (h.alsoLf) link('Page Légifrance', h.alsoLf);
       var cp = el('button', 'link', 'Copier la référence');
       cp.type = 'button';
-      cp.addEventListener('click', function () { copyText(reference(s), cp); });
+      cp.addEventListener('click', function () { copyText(h.ref, cp); });
       acts.appendChild(cp);
       li.appendChild(acts);
       list.appendChild(li);
@@ -719,8 +987,11 @@
       setMsg('warn', 'Indiquez au moins un terme obligatoire : un mot-clé, ou un terme extrait du texte libre placé en « obligatoire ».');
       return;
     }
+    var useOD = $('srcOD').checked, useLF = $('srcLF').checked && lf.ok;
+    if (!useOD && !useLF) { setMsg('warn', 'Cochez au moins une source. Légifrance demande d\'abord une connexion.'); return; }
     var courts = selectedCourts();
     if (courts && !courts.length) { setMsg('warn', 'Cochez au moins un type de juridiction.'); return; }
+    var sel = courtSelection();
     var d1 = $('d1').value, d2 = $('d2').value;
     if (d1 && d2 && d1 > d2) { setMsg('warn', 'La date de début est postérieure à la date de fin.'); return; }
     var n = parseInt($('nb').value, 10) || 50;
@@ -732,28 +1003,49 @@
     current.hits = []; current.terms = terms; current.total = 0; current.analysed = false;
     $('out').textContent = '';
     $('rtitle').textContent = 'Résultats';
-    setStatus('Interrogation de la base…');
+    setStatus('Interrogation ' + (useOD && useLF ? 'des deux bases…' : 'de la base…'));
     $('go').disabled = true;
 
     try {
-      var res = await getJSON(buildPath(q, courts, d1, d2, n), signal);
-      if (myId !== current.id) return;
-      var hits = res.hits || [];
+      var settled = await Promise.allSettled([
+        useOD ? odSearch(q, courts, d1, d2, n, signal) : Promise.resolve(null),
+        useLF ? lfSearch(terms, d1, d2, n, sel, signal) : Promise.resolve(null)
+      ]);
+      if (myId !== current.id || signal.aborted) return;
+      var od = settled[0].status === 'fulfilled' ? settled[0].value : null;
+      var lfr = settled[1].status === 'fulfilled' ? settled[1].value : null;
+      if (useOD && !od) addMsg('err', 'L\'open data n\'a pas répondu. Vérifiez votre connexion ; si le problème persiste, votre réseau bloque peut-être l\'accès à opendata.justice-administrative.fr.');
+      if (useLF && !lfr) addMsg('err', 'Légifrance n\'a pas répondu' + (settled[1].reason && settled[1].reason.message ? ' : ' + settled[1].reason.message : '.') + ' Le détail figure dans le diagnostic de la connexion.');
+      if (!od && !lfr) { setStatus(''); return; }
+
+      var hits = [], seen = {};
+      if (od) od.hits.forEach(function (h) { var k = hitKey(h); if (k) seen[k] = h; hits.push(h); });
+      var dup = 0;
+      if (lfr) lfr.hits.forEach(function (h) {
+        var k = hitKey(h);
+        if (k && seen[k]) { seen[k].alsoLf = h.url; dup++; return; }
+        hits.push(h);
+      });
       current.hits = hits;
-      current.total = (res.total && res.total.value) || hits.length;
-      var tot = current.total.toLocaleString('fr-FR');
-      $('rtitle').textContent = current.total === 0 ? 'Aucune décision' : (current.total === 1 ? '1 décision' : tot + ' décisions');
+      current.total = (od ? od.total : 0) + (lfr ? lfr.total : 0);
+      var fmt = function (x) { return x.toLocaleString('fr-FR'); };
+      var counts = [];
+      if (od) counts.push('open data : ' + fmt(od.total));
+      if (lfr) counts.push('Légifrance : ' + fmt(lfr.total));
+      $('rtitle').textContent = hits.length === 0 ? 'Aucune décision'
+        : (counts.length > 1 ? counts.join(' · ') : (current.total === 1 ? '1 décision' : fmt(current.total) + ' décisions'));
       if (!hits.length) {
         setStatus('');
         var musts = terms.filter(function (t) { return t.role === 'must'; }).length;
-        setMsg('info', musts > 1
+        addMsg('info', musts > 1
           ? 'Aucune décision ne contient tous les termes obligatoires. Passez-en un ou deux en « bonus », ou élargissez la période et les juridictions.'
           : 'Aucune décision ne contient ce terme. Essayez un synonyme ou élargissez la période et les juridictions.');
         return;
       }
-      if (current.total > hits.length) {
-        setMsg('info', 'Seules les ' + hits.length + ' décisions les plus récentes sont analysées, sur ' + tot + '. Pour cibler, ajoutez un terme obligatoire ou resserrez la période.');
-      }
+      var partial = [];
+      if (od && od.total > od.hits.length) partial.push('les ' + od.hits.length + ' plus récentes de l\'open data');
+      if (lfr && lfr.total > lfr.hits.length) partial.push('les ' + lfr.hits.length + ' mieux classées par Légifrance');
+      if (partial.length) addMsg('info', 'Décisions analysées : ' + partial.join(' et ') + '. Pour cibler, ajoutez un terme obligatoire ou resserrez la période.');
       renderResults();
 
       var done = 0, failed = 0, i = 0;
@@ -775,12 +1067,12 @@
       await Promise.all([worker(), worker(), worker()]);
       if (myId !== current.id || signal.aborted) return;
       current.analysed = true;
-      setStatus(failed ? ('Classement terminé. ' + failed + ' décision(s) non lue(s).') : 'Classement terminé.');
+      setStatus((failed ? 'Classement terminé. ' + failed + ' décision(s) non lue(s).' : 'Classement terminé.') + (dup ? ' ' + dup + ' doublon(s) entre les deux sources fusionné(s).' : ''));
       renderResults();
     } catch (e) {
       if (signal.aborted || myId !== current.id) return;
       setStatus('');
-      setMsg('err', 'La base open data n\'a pas répondu. Vérifiez votre connexion ; si le problème persiste, il est possible que votre réseau bloque l\'accès à opendata.justice-administrative.fr depuis cette page.');
+      addMsg('err', 'La recherche a échoué de façon inattendue (' + (e && e.message) + ').');
     } finally {
       if (myId === current.id) $('go').disabled = false;
     }
@@ -829,6 +1121,10 @@
   $('go').addEventListener('click', search);
   $('kw').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search(); } });
   $('reset').addEventListener('click', resetAll);
+  $('lfConnect').addEventListener('click', lfConnect);
+  $('lfOut').addEventListener('click', lfDisconnect);
+  $('lfCopy').addEventListener('click', function () { copyText(diag.join('\n') || 'Aucun essai.', $('lfCopy')); });
+  $('lfTok').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lfConnect(); } });
   $('sort').addEventListener('change', renderResults);
 })();
 </script>
