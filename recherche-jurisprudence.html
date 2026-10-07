@@ -724,37 +724,65 @@
       return { typeRecherche: type, valeur: t.text, operateur: 'ET' };
     });
   }
-  function lfBody(criteres, n, dates) {
+  function lfBody(champs, n, dates) {
     var filtres = [];
     if (dates) filtres.push({ facette: 'DATE_DECISION', dates: { start: dates[0], end: dates[1] } });
     return {
       fond: 'CETAT',
       recherche: {
-        champs: [{ typeChamp: 'ALL', operateur: 'ET', criteres: criteres }],
+        champs: champs,
         filtres: filtres, pageNumber: 1, pageSize: n, operateur: 'ET',
         sort: 'PERTINENCE', typePagination: 'DEFAUT'
       }
     };
   }
-  function lfAnyGroup(list) {
+  // Un groupe « au moins un de ces termes » = un champ dont les critères sont reliés par OU.
+  // Chaque critère porte typeRecherche et valeur, que l'API exige (un critère sans eux est refusé).
+  function lfChampAny(list) {
     return {
-      operateur: 'ET',
-      criteres: list.map(function (v) { return { typeRecherche: /\s/.test(v) ? 'EXACTE' : 'UN_DES_MOTS', valeur: v, operateur: 'OU' }; })
+      typeChamp: 'ALL', operateur: 'OU',
+      criteres: list.map(function (v) { return { typeRecherche: /\s/.test(v) ? 'EXACTE' : 'UN_DES_MOTS', valeur: v, operateur: 'ET' }; })
     };
   }
+  // Variante de secours, la plus simple possible : un seul critère « un des mots » par groupe.
+  function lfWordsAny(list) {
+    var words = [];
+    list.forEach(function (v) {
+      v.split(/\s+/).forEach(function (w) { if ((list.length === 1 || !/\s/.test(v) || w.length >= 6) && words.indexOf(w) < 0) words.push(w); });
+    });
+    return { typeRecherche: 'UN_DES_MOTS', valeur: words.join(' '), operateur: 'ET' };
+  }
   async function lfSearch(terms, d1, d2, n, sel, signal, groups) {
-    var criteres = lfCriteria(terms);
-    (groups || []).forEach(function (g) { criteres.push(lfAnyGroup(g)); });
-    var dates = (d1 || d2) ? [d1 || '1900-01-01', d2 || new Date().toISOString().slice(0, 10)] : null;
-    var res, localDates = false;
-    try {
-      res = await lfPost('/search', lfBody(criteres, n, dates), signal);
-    } catch (e) {
-      if (!dates || e.kind !== 'http') throw e;
-      log('/search : nouvel essai sans filtre de date (filtrage fait par la page)');
-      res = await lfPost('/search', lfBody(criteres, n, null), signal);
-      localDates = true;
+    var own = lfCriteria(terms);
+    var variants = [];
+    if (groups && groups.length) {
+      var champs = groups.map(lfChampAny);
+      if (own.length) champs.push({ typeChamp: 'ALL', operateur: 'ET', criteres: own });
+      variants.push(['groupes', champs]);
+      variants.push(['mots', [{ typeChamp: 'ALL', operateur: 'ET', criteres: own.concat(groups.map(lfWordsAny)) }]]);
+    } else {
+      variants.push(['simple', [{ typeChamp: 'ALL', operateur: 'ET', criteres: own }]]);
     }
+    var dates = (d1 || d2) ? [d1 || '1900-01-01', d2 || new Date().toISOString().slice(0, 10)] : null;
+    var res = null, localDates = false, lastErr = null;
+    for (var v = 0; v < variants.length && !res; v++) {
+      try {
+        try {
+          res = await lfPost('/search', lfBody(variants[v][1], n, dates), signal);
+        } catch (e) {
+          if (!dates || e.kind !== 'http') throw e;
+          log('/search : nouvel essai sans filtre de date (filtrage fait par la page)');
+          res = await lfPost('/search', lfBody(variants[v][1], n, null), signal);
+          localDates = true;
+        }
+        if (variants.length > 1) log('/search : requête acceptée, forme « ' + variants[v][0] + ' »');
+      } catch (e2) {
+        lastErr = e2;
+        if (e2.kind !== 'http' || v === variants.length - 1) throw e2;
+        log('/search : forme « ' + variants[v][0] + ' » refusée, essai de la forme suivante');
+      }
+    }
+    if (!res) throw lastErr;
     var raw = res.results || [];
     log('/search : ' + (res.totalResultNumber || 0) + ' résultat(s), ' + raw.length + ' reçu(s)' +
       (raw[0] ? ' ; champs : ' + Object.keys(raw[0]).filter(function (k) { return raw[0][k] != null && raw[0][k] !== '' && !(Array.isArray(raw[0][k]) && !raw[0][k].length); }).join(',') : '') +
@@ -805,7 +833,7 @@
     $('lfConnect').disabled = true;
     st.textContent = 'Vérification en cours…';
     try {
-      var res = await lfPost('/search', lfBody([{ typeRecherche: 'TOUS_LES_MOTS_DANS_UN_CHAMP', valeur: 'décret', operateur: 'ET' }], 1, null), null);
+      var res = await lfPost('/search', lfBody([{ typeChamp: 'ALL', operateur: 'ET', criteres: [{ typeRecherche: 'TOUS_LES_MOTS_DANS_UN_CHAMP', valeur: 'décret', operateur: 'ET' }] }], 1, null), null);
       log('essai de recherche : ' + (res.totalResultNumber || 0) + ' résultat(s)');
       lf.ok = true;
       st.className = 'state ok';
