@@ -200,6 +200,7 @@
       <h2 class="q" id="qMoyen">Quel argument du requérant devez-vous contrer ?</h2>
       <p class="lede">La page retrouve les décisions rendues sur vos mesures et montre, pour chacune, comment le juge a répondu à cet argument.</p>
       <div class="choices" id="moyenGrid" role="radiogroup" aria-labelledby="qMoyen"></div>
+      <p class="lede" id="moyenHint" style="margin-top:10px" hidden>Cliquez de nouveau sur l'argument choisi pour le retirer et chercher par mots-clés seuls.</p>
       <div class="line">
         <span class="lbl" id="mesureL">Mesure contestée</span>
         <div class="seg small" id="mesureSeg" role="group" aria-labelledby="mesureL">
@@ -1473,7 +1474,6 @@
     setMsg('', '');
     var moyen = null, groups = null, mesure = $('mesure').value;
     if (mode === 'moyen') MOYENS.forEach(function (m) { if (m.id === $('moyen').value) moyen = m; });
-    if (mode === 'moyen' && !moyen) { setMsg('warn', 'Choisissez d\'abord l\'argument à contrer.'); return; }
     if (moyen) {
       groups = [MESURES[mesure].any, moyen.any];
       // Le moteur open data refuse une requête qui se termine par une parenthèse : on finit par un mot présent partout.
@@ -1483,7 +1483,7 @@
       moyen.hl.forEach(function (w) { if (!known[norm(w)]) terms.push({ text: w, role: 'bonus', re: termRegex(w) }); });
     }
     if (!moyen && !terms.some(function (t) { return t.role === 'must'; })) {
-      setMsg('warn', 'Indiquez au moins un mot-clé, ou décrivez le cas puis placez un terme extrait en « obligatoire ».');
+      setMsg('warn', mode === 'moyen' ? 'Choisissez un argument à contrer, ou saisissez au moins un mot-clé.' : 'Indiquez au moins un mot-clé, ou décrivez le cas puis placez un terme extrait en « obligatoire ».');
       return;
     }
     var useOD = $('srcOD').checked, useLF = $('srcLF').checked && lf.ok;
@@ -1601,6 +1601,13 @@
     Array.prototype.forEach.call($('mesureSeg').querySelectorAll('button'), function (b) {
       b.setAttribute('aria-pressed', b.dataset.v === $('mesure').value ? 'true' : 'false');
     });
+    $('moyenHint').hidden = !$('moyen').value;
+    kwLabel();
+  }
+  function kwLabel() {
+    var withMoyen = mode === 'moyen' && $('moyen').value;
+    $('kwL').textContent = withMoyen ? 'Mots-clés complémentaires (facultatif)' : 'Mots-clés';
+    $('kw').placeholder = withMoyen ? 'ex. animateur, bénévole' : 'ex. "accueil collectif de mineurs" suspension';
   }
   function setMode(m) {
     mode = m;
@@ -1608,8 +1615,7 @@
     $('tabMoyen').setAttribute('aria-selected', isM ? 'true' : 'false');
     $('tabLibre').setAttribute('aria-selected', isM ? 'false' : 'true');
     $('paneMoyen').hidden = !isM; $('paneLibre').hidden = isM;
-    $('kwL').textContent = isM ? 'Mots-clés complémentaires (facultatif)' : 'Mots-clés';
-    $('kw').placeholder = isM ? 'ex. animateur, bénévole' : 'ex. "accueil collectif de mineurs" suspension';
+    kwLabel();
   }
   function resetAll() {
     if (controller) controller.abort();
@@ -1673,7 +1679,8 @@
     var o = document.createElement('option'); o.value = m.id; o.textContent = m.label; $('moyen').appendChild(o);
     var b = el('button', 'choice', m.label);
     b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.v = m.id;
-    b.addEventListener('click', function () { $('moyen').value = m.id; syncChoices(); setMsg('', ''); });
+    // Un second clic sur l'argument choisi le retire : la recherche porte alors sur les seuls mots-clés.
+    b.addEventListener('click', function () { $('moyen').value = $('moyen').value === m.id ? '' : m.id; syncChoices(); setMsg('', ''); });
     $('moyenGrid').appendChild(b);
   });
   Array.prototype.forEach.call($('mesureSeg').querySelectorAll('button'), function (b) {
